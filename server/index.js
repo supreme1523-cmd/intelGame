@@ -12,6 +12,11 @@ const io = new Server(server);
 // Serve static files from root
 app.use(express.static(path.join(__dirname, '../')));
 
+// Explicitly serve index.html for the root route
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../index.html'));
+});
+
 // Game State Management
 const matches = {}; // roomId -> { state, p1: socketId, p2: socketId, p1Action: null, p2Action: null, timeout: null }
 const users = {}; // socketId -> roomId
