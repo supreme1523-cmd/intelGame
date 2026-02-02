@@ -46,8 +46,8 @@ function resolveMatchTurn(roomId) {
     console.log(`Match ${roomId}: Resolving Turn ${match.state.turn}`);
 
     // Resolve
-    const newState = GameLogic.resolveTurn(match.state, match.p1Action, match.p2Action);
     match.history.push(JSON.parse(JSON.stringify(match.state)));
+    const { state: newState, events } = GameLogic.resolveTurn(match.state, match.p1Action, match.p2Action);
     match.state = newState;
 
     // Reset Actions
@@ -55,7 +55,7 @@ function resolveMatchTurn(roomId) {
     match.p2Action = null;
 
     // Broadcast Reveal
-    io.to(roomId).emit('turn_result', { state: newState });
+    io.to(roomId).emit('turn_result', { state: newState, events });
 
     // Check Win Condition
     const p1 = newState.players.p1;
@@ -82,43 +82,74 @@ function resolveMatchTurn(roomId) {
     }
 }
 
+const ROOM_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // Avoid ambiguous chars
+function generateRoomCode() {
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += ROOM_CODE_CHARS.charAt(Math.floor(Math.random() * ROOM_CODE_CHARS.length));
+    }
+    return code;
+}
+
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
 
-    let joined = false;
-    for (const [id, match] of Object.entries(matches)) {
-        if (!match.p2) {
-            match.p2 = socket.id;
-            users[socket.id] = id;
-            socket.join(id);
-            joined = true;
-            console.log(`Match ${id}: P2 joined (${socket.id})`);
-
-            match.state = GameLogic.createInitialState();
-            io.to(match.p1).emit('match_start', { role: 'p1', state: match.state });
-            io.to(match.p2).emit('match_start', { role: 'p2', state: match.state });
-
-            startTurnTimeout(id);
-            break;
-        }
-    }
-
-    if (!joined) {
-        const roomId = 'room-' + Math.random().toString(36).substr(2, 9);
-        matches[roomId] = {
+    socket.on('create_room', () => {
+        const code = generateRoomCode();
+        matches[code] = {
             state: null,
             history: [],
             p1: socket.id,
             p2: null,
             p1Action: null,
             p2Action: null,
-            timeout: null
+            timeout: null,
+            isPrivate: true
         };
-        users[socket.id] = roomId;
-        socket.join(roomId);
-        socket.emit('waiting', { msg: 'Waiting for opponent...' });
-        console.log(`Match ${roomId}: P1 created (${socket.id})`);
-    }
+        users[socket.id] = code;
+        socket.join(code);
+        socket.emit('room_created', { code });
+        console.log(`Room Created: ${code} by ${socket.id}`);
+    });
+
+    socket.on('join_room', (data) => {
+        const code = data.code ? data.code.toUpperCase() : null;
+        const match = matches[code];
+
+        if (!match) {
+            socket.emit('join_failed', { message: 'ROOM NOT FOUND' });
+            return;
+        }
+
+        if (match.p2) {
+            socket.emit('join_failed', { message: 'ROOM IS FULL' });
+            return;
+        }
+
+        match.p2 = socket.id;
+        users[socket.id] = code;
+        socket.join(code);
+        console.log(`User ${socket.id} joined Room ${code}`);
+
+        // Start Match
+        match.state = GameLogic.createInitialState();
+        io.to(match.p1).emit('match_start', { role: 'p1', state: match.state });
+        io.to(match.p2).emit('match_start', { role: 'p2', state: match.state });
+
+        startTurnTimeout(code);
+    });
+
+    socket.on('cancel_room', () => {
+        const roomId = users[socket.id];
+        if (roomId && matches[roomId]) {
+            if (matches[roomId].p1 === socket.id && !matches[roomId].p2) {
+                delete matches[roomId];
+                socket.leave(roomId);
+                delete users[socket.id];
+                console.log(`Room ${roomId} cancelled by creator.`);
+            }
+        }
+    });
 
     socket.on('submit_action', (rawAction) => {
         const roomId = users[socket.id];

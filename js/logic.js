@@ -78,6 +78,7 @@
     function resolveTurn(state, p1Action, p2Action) {
         const newState = JSON.parse(JSON.stringify(state)); // Deep copy-ish
         const log = [];
+        const events = [];
 
         const p1 = newState.players.p1;
         const p2 = newState.players.p2;
@@ -99,8 +100,6 @@
             return 0;
         };
 
-        // 0. Deduct Energy & Apply Penalties
-        // Safeguard: Repeating actions costs +1
         const getPenalty = (player, action) => {
             if (!player.lastAction) return 0;
             if (player.lastAction.type === action.type && action.type !== 'ability') return 1;
@@ -113,16 +112,16 @@
         const p1Cost = getRawCost(p1Action) + p1Penalty;
         const p2Cost = getRawCost(p2Action) + p2Penalty;
 
-        // Reset stateful penalty after applying it
         p1.harvestPenalty = 0;
         p2.harvestPenalty = 0;
 
-        // Server authority: If player doesn't have enough energy, the action fails (becomes 'idle')
+        // 0. Deduct Energy
         if (p1.nrg < p1Cost) {
             log.push("P1 energy too low! Action failed.");
             p1Action.type = 'idle';
         } else {
             p1.nrg -= p1Cost;
+            events.push({ type: 'energy', player: 'p1', cost: p1Cost, remaining: p1.nrg });
         }
 
         if (p2.nrg < p2Cost) {
@@ -130,13 +129,13 @@
             p2Action.type = 'idle';
         } else {
             p2.nrg -= p2Cost;
+            events.push({ type: 'energy', player: 'p2', cost: p2Cost, remaining: p2.nrg });
         }
 
         p1.nrg = Math.max(0, p1.nrg);
         p2.nrg = Math.max(0, p2.nrg);
 
-        // Update Last Action for next turn
-        p1.lastAction = p1Action; // Store full obj or just type? Logic needs type.
+        p1.lastAction = p1Action;
         p2.lastAction = p2Action;
 
         // 1. Reset Turn Flags
@@ -145,22 +144,22 @@
         let p1Jammed = false;
         let p2Jammed = false;
 
-        // 2. Process Abilities (Priority 0 - Meta)
-        // Jam
+        // 2. Process Meta Abilities (Jam)
         if (p1Action.type === 'ability' && p1Action.id === 'jam') {
             p2Jammed = true;
             log.push("P1 used JAM! P2's action cancelled.");
+            events.push({ type: 'jam', source: 'p1', target: 'p2' });
             const idx = newState.abilities.indexOf('jam');
             if (idx > -1) newState.abilities.splice(idx, 1);
         }
         if (p2Action.type === 'ability' && p2Action.id === 'jam') {
             p1Jammed = true;
             log.push("P2 used JAM! P1's action cancelled.");
+            events.push({ type: 'jam', source: 'p2', target: 'p1' });
             const idx = newState.abilities.indexOf('jam');
             if (idx > -1) newState.abilities.splice(idx, 1);
         }
 
-        // Remove other abilities if used
         if (p1Action.type === 'ability' && p1Action.id !== 'jam') {
             const idx = newState.abilities.indexOf(p1Action.id);
             if (idx > -1) newState.abilities.splice(idx, 1);
@@ -170,13 +169,13 @@
             if (idx > -1) newState.abilities.splice(idx, 1);
         }
 
-
         // 3. Process Defensives and Other Abilities
         if (!p1Jammed) {
             if (p1Action.type === 'defend') p1.shield = true;
             if (p1Action.type === 'ability' && p1Action.id === 'recharge') {
                 p1.nrg = Math.min(CONSTANTS.MAX_ENERGY, p1.nrg + 2);
                 log.push("P1 Recharged.");
+                events.push({ type: 'recharge', player: 'p1', nrg: p1.nrg });
             }
         }
         if (!p2Jammed) {
@@ -184,6 +183,7 @@
             if (p2Action.type === 'ability' && p2Action.id === 'recharge') {
                 p2.nrg = Math.min(CONSTANTS.MAX_ENERGY, p2.nrg + 2);
                 log.push("P2 Recharged.");
+                events.push({ type: 'recharge', player: 'p2', nrg: p2.nrg });
             }
         }
 
@@ -193,7 +193,7 @@
 
         const applyMove = (pos, dir, steps = 1) => {
             const d = DIRECTIONS[dir];
-            if (!d) return { x: pos.x, y: pos.y }; // Stay if invalid dir
+            if (!d) return { x: pos.x, y: pos.y };
             return { x: pos.x + (d.x * steps), y: pos.y + (d.y * steps) };
         };
 
@@ -206,38 +206,34 @@
             if (p2Action.type === 'ability' && p2Action.id === 'blink') p2Pos = applyMove(p2Pos, p2Action.dir, 2);
         }
 
-        // 5. Resolve Collision (Deterministic)
+        // 5. Resolve Collision
         function isValid(pos) {
             return pos.x >= 0 && pos.x < CONSTANTS.GRID_SIZE &&
                 pos.y >= 0 && pos.y < CONSTANTS.GRID_SIZE;
         }
 
-        // Rule A: Out of Bounds
         if (!isValid(p1Pos)) p1Pos = { x: p1.x, y: p1.y };
         if (!isValid(p2Pos)) p2Pos = { x: p2.x, y: p2.y };
 
-        // Rule B: Same square
         if (p1Pos.x === p2Pos.x && p1Pos.y === p2Pos.y) {
             log.push("COLLISION! Both players bounced back.");
+            events.push({ type: 'collision', at: p1Pos });
             p1Pos = { x: p1.x, y: p1.y };
             p2Pos = { x: p2.x, y: p2.y };
         }
 
-        // Rule C: Swapping (Head-on)
         if (p1Pos.x === p2.x && p1Pos.y === p2.y && p2Pos.x === p1.x && p2Pos.y === p1.y) {
             log.push("HEAD-ON COLLISION! Movement cancelled.");
+            events.push({ type: 'collision', at: p1Pos });
             p1Pos = { x: p1.x, y: p1.y };
             p2Pos = { x: p2.x, y: p2.y };
         }
 
-        // Rule D: Moving into stationary opponent
-        if ((p1Action.type === 'move' || (p1Action.type === 'ability' && p1Action.id === 'blink')) && !p1Jammed && p1Pos.x === p2Pos.x && p1Pos.y === p2Pos.y) {
-            p1Pos = { x: p1.x, y: p1.y };
-            log.push("P1 Blocked by P2.");
+        if (p1Pos.x !== p1.x || p1Pos.y !== p1.y) {
+            events.push({ type: 'move', player: 'p1', from: { x: p1.x, y: p1.y }, to: p1Pos });
         }
-        if ((p2Action.type === 'move' || (p2Action.type === 'ability' && p2Action.id === 'blink')) && !p2Jammed && p2Pos.x === p1Pos.x && p2Pos.y === p1Pos.y) {
-            p2Pos = { x: p2.x, y: p2.y };
-            log.push("P2 Blocked by P1.");
+        if (p2Pos.x !== p2.x || p2Pos.y !== p2.y) {
+            events.push({ type: 'move', player: 'p2', from: { x: p2.x, y: p2.y }, to: p2Pos });
         }
 
         // Apply Moves
@@ -254,13 +250,15 @@
             if (tile.cooldown > 0) return;
 
             log.push(`PLAYER ${player.id.toUpperCase()} harvested ${tile.type.toUpperCase()}!`);
+            events.push({ type: 'harvest', player: player.id, tile: tile.type, pos: { x: player.x, y: player.y } });
+
             if (tile.type === 'energy') {
                 player.nrg = Math.min(CONSTANTS.MAX_ENERGY, player.nrg + 1);
             } else if (tile.type === 'heal') {
                 player.hp = Math.min(CONSTANTS.MAX_HP, player.hp + 1);
             } else if (tile.type === 'special') {
                 player.nrg = CONSTANTS.MAX_ENERGY;
-                player.harvestPenalty = -1; // Next action is free (cost reduction)
+                player.harvestPenalty = -1;
                 log.push(`PLAYER ${player.id.toUpperCase()} receives ENERGY REFILL and next action FREE!`);
             }
 
@@ -272,7 +270,7 @@
 
             const count = player.recentHarvests.filter(t => t === tile.type).length;
             if (count >= 2) {
-                player.harvestPenalty = 1; // Increase cost if same type used too much
+                player.harvestPenalty = 1;
                 log.push(`OVERUSE! PLAYER ${player.id.toUpperCase()} feels fatigued. (+1 Energy Cost next turn)`);
             }
         };
@@ -281,6 +279,7 @@
             const tile = newState.tiles[p1Key];
             if (tile.cooldown === 0) {
                 log.push(`CONTESTED! Both players fought over the ${tile.type} tile. No one gets it!`);
+                events.push({ type: 'contest', pos: { x: p1.x, y: p1.y }, tile: tile.type });
                 tile.cooldown = CONSTANTS.RESOURCE_CD[tile.type] || 5;
             }
         } else {
@@ -291,81 +290,68 @@
         // 6. Resolve Attacks
         if (!p1Jammed && p1Action.type === 'attack') {
             const d = DIRECTIONS[p1Action.dir];
-            if (!d) {
-                log.push("P1 Attacked wildly (No Direction).");
-            } else {
-                const targetX = p1.x + d.x; // Attack from new position? No, usually start. 
-                // "Actions resolve simultaneously".
-                // If I Move and Attack, I attack from NEW pos? 
-                // My previous logic was "If type is ATTACK, I didn't Move".
-                // So Start Pos == End Pos.
-
-                // Wait, logic says `p1.x = p1Pos.x`.
-                // If action was 'attack', p1Pos IS p1's start pos (calculated above, move block skipped).
-                // So `p1.x` is already updated to (same) pos.
-
+            if (d) {
                 const aimX = p1.x + d.x;
                 const aimY = p1.y + d.y;
+                events.push({ type: 'attack', player: 'p1', target: { x: aimX, y: aimY } });
 
                 if (p2.x === aimX && p2.y === aimY) {
                     if (p2.shield) {
                         log.push("P1 Attacked P2, but P2 Defended!");
+                        events.push({ type: 'shield', player: 'p2' });
                     } else {
                         p2.hp -= 1;
                         log.push("P1 HIT P2!");
+                        events.push({ type: 'hit', target: 'p2', damage: 1 });
                     }
                 } else {
                     log.push("P1 Attacked empty space.");
                 }
+            } else {
+                log.push("P1 Attacked wildly (No Direction).");
             }
         } // Close P1 Attack Block
 
         if (!p2Jammed && p2Action.type === 'attack') {
             const d = DIRECTIONS[p2Action.dir];
-            if (!d) {
-                log.push("P2 Attacked wildly (No Direction).");
-            } else {
+            if (d) {
                 const aimX = p2.x + d.x;
                 const aimY = p2.y + d.y;
+                events.push({ type: 'attack', player: 'p2', target: { x: aimX, y: aimY } });
 
                 if (p1.x === aimX && p1.y === aimY) {
                     if (p1.shield) {
                         log.push("P2 Attacked P1, but P1 Defended!");
+                        events.push({ type: 'shield', player: 'p1' });
                     } else {
                         p1.hp -= 1;
                         log.push("P2 HIT P1!");
+                        events.push({ type: 'hit', target: 'p1', damage: 1 });
                     }
                 } else {
                     log.push("P2 Attacked empty space.");
                 }
+            } else {
+                log.push("P2 Attacked wildly (No Direction).");
             }
         } // Close P2 Attack Block
 
-        // 7. Energy Regen & Progression
-        // Forced Variation Incentive: +1 Bonus Energy if you change action types
-        const calculateRegen = (player, currentAction) => {
-            const baseRegen = 1;
-            // Note: lastAction here is still from the PREVIOUS state because we haven't updated it on the player object yet, 
-            // OR we can use newState.players[id].lastAction if we update it at the very end.
-            // Wait, I updated it at line 75. Let's look at the code again.
-            return 1; // Placeholder for now, let's be careful.
-        };
-
-        // Actually, let's do it simply:
+        // 7. Energy Regen
         const p1Changed = !state.players.p1.lastAction || state.players.p1.lastAction.type !== p1Action.type;
         const p2Changed = !state.players.p2.lastAction || state.players.p2.lastAction.type !== p2Action.type;
 
         p1.nrg = Math.min(CONSTANTS.MAX_ENERGY, p1.nrg + (p1Changed ? 2 : 1));
         p2.nrg = Math.min(CONSTANTS.MAX_ENERGY, p2.nrg + (p2Changed ? 2 : 1));
 
-        // Update Last Action for next turn (moved here)
+        events.push({ type: 'regen', p1: p1.nrg, p2: p2.nrg });
+
         p1.lastAction = p1Action;
         p2.lastAction = p2Action;
 
         newState.turn += 1;
         newState.log = log;
 
-        return newState;
+        return { state: newState, events };
     }
 
     // Expose

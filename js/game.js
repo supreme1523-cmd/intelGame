@@ -8,12 +8,27 @@
     let pendingAction = null;
     let committed = false;
 
-    // --- Onboarding Transition ---
-    document.getElementById('start-game-btn').addEventListener('click', () => {
-        UI.hideOnboarding();
-        socket = io();
-        setupSocketListeners();
+    // --- Menu Integration ---
+    window.addEventListener('request_create_room', () => {
+        ensureSocket();
+        socket.emit('create_room');
     });
+
+    window.addEventListener('request_join_room', (e) => {
+        ensureSocket();
+        socket.emit('join_room', { code: e.detail.code });
+    });
+
+    window.addEventListener('request_cancel_room', () => {
+        if (socket) socket.emit('cancel_room');
+    });
+
+    function ensureSocket() {
+        if (!socket) {
+            socket = io();
+            setupSocketListeners();
+        }
+    }
 
     // --- UI Callbacks ---
     function handleInput(type, data) {
@@ -32,16 +47,17 @@
             cost = getActionCost(type);
         }
 
-        // Local validation
+        // Penalty Approximation (Repeating actions cost +1)
         const myState = currentState.players[myRole];
-        if (myState.nrg < cost) {
-            UI.appendLog(`Not enough energy! Need ${cost}.`);
-            return;
+        if (myState.lastAction && myState.lastAction.type === newAction.type && newAction.type !== 'ability') {
+            cost += 1;
         }
+        if (myState.harvestPenalty) cost += myState.harvestPenalty;
 
         newAction.cost = cost;
         pendingAction = newAction;
-        UI.appendLog(`Selected: ${type.toUpperCase()}`);
+
+        UI.updatePreview(myRole, newAction, myState.nrg);
     }
 
     function handleCommit() {
@@ -50,19 +66,28 @@
             return;
         }
 
-        UI.appendLog("Committing action...");
+        const myState = currentState.players[myRole];
+        if (myState.nrg < pendingAction.cost) {
+            UI.appendLog("NOT ENOUGH ENERGY!");
+            return;
+        }
+
+        UI.appendLog("Locking Intent...");
         socket.emit('submit_action', pendingAction);
     }
 
     // --- Socket Listeners ---
     function setupSocketListeners() {
         socket.on('connect', () => {
-            UI.appendLog("Connected. Finding match...");
-            UI.showOverlay("CONNECTING", "FINDING OPPONENT...", () => { });
+            UI.appendLog("Connected to server.");
         });
 
-        socket.on('waiting', (data) => {
-            UI.showOverlay("LOBBY", data.msg, () => { });
+        socket.on('room_created', (data) => {
+            window.dispatchEvent(new CustomEvent('room_created', { detail: data }));
+        });
+
+        socket.on('join_failed', (data) => {
+            window.dispatchEvent(new CustomEvent('join_failed', { detail: data }));
         });
 
         socket.on('match_start', (data) => {
@@ -71,7 +96,7 @@
             committed = false;
             pendingAction = null;
 
-            UI.hideOverlay();
+            window.dispatchEvent(new CustomEvent('match_started'));
             UI.setLocked(false);
             UI.init(handleInput, handleCommit);
             UI.render(currentState, myRole);
@@ -86,21 +111,20 @@
         });
 
         socket.on('opponent_committed', () => {
-            UI.appendLog("Opponent is ready.");
+            UI.appendLog("Opponent has locked intent.");
         });
 
         socket.on('turn_result', (data) => {
-            currentState = data.state;
+            const finalState = data.state;
+            const events = data.events || [];
             committed = false;
             pendingAction = null;
-            UI.setLocked(false);
 
-            // Visual Resolution Delay
-            UI.showOverlay("RESOLVING...", "PLEASE WAIT", () => { });
-            setTimeout(() => {
-                UI.hideOverlay();
+            UI.animateResolution(currentState, events, finalState, myRole, () => {
+                currentState = finalState;
+                UI.setLocked(false);
                 UI.render(currentState, myRole);
-            }, 1800);
+            });
         });
 
         socket.on('game_over', (data) => {

@@ -2,6 +2,7 @@
 (function () {
     const { CONSTANTS, DIRECTIONS, ABILITIES } = window.GameLogic;
 
+    // Elements
     const gridEl = document.getElementById('game-grid');
     const overlayEl = document.getElementById('overlay-message');
     const overlayText = document.getElementById('overlay-text');
@@ -12,26 +13,29 @@
     const actionBtns = document.querySelectorAll('.action-btn');
     const abilityTrack = document.getElementById('ability-track');
     const dBtns = document.querySelectorAll('.d-btn');
+    const turnNumEl = document.getElementById('turn-num');
+    const phaseEl = document.getElementById('phase-indicator');
 
-    const actionDock = document.querySelector('.controls-area');
-    const onboardingOverlay = document.getElementById('onboarding-overlay');
+    // New Elements
+    const pendingCard = document.getElementById('pending-action-card');
+    const energyPreview = document.getElementById('energy-preview');
+    const mainLayout = document.querySelector('.main-layout');
 
     let onInputCallback = null;
     let onCommitCallback = null;
     let selectedActionType = null;
+    let currentPerspective = null;
+    let initialized = false;
 
     function init(onInput, onCommit) {
+        if (initialized) return;
         onInputCallback = onInput;
         onCommitCallback = onCommit;
 
-        // Action Buttons
         actionBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                // UI Toggle
                 actionBtns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-
-                // Also clear ability btns
                 document.querySelectorAll('.ability-btn').forEach(b => b.classList.remove('active'));
 
                 const type = btn.dataset.type;
@@ -39,68 +43,77 @@
 
                 if (type === 'move' || type === 'attack') {
                     dPad.classList.remove('hidden');
-                    disableCommit(); // Force checking direction
+                    disableCommit();
                 } else {
                     dPad.classList.add('hidden');
-                    onInputCallback(type, {}); // No direction needed for defend
+                    onInputCallback(type, {});
                     enableCommit();
                 }
             });
         });
 
-        // Direction Buttons
         dBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!selectedActionType) return; // Should be handled by ability too logic? 
-                // Wait, if ability is selected, selectedActionType is 'ability' (my hack).
+                if (!selectedActionType) return;
                 const dir = btn.dataset.dir;
                 onInputCallback(selectedActionType, { dir });
                 enableCommit();
             });
         });
 
-        // Commit
         commitBtn.addEventListener('click', () => {
             if (!commitBtn.classList.contains('disabled')) {
-                disableCommit();
-                selectedActionType = null;
-                actionBtns.forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.ability-btn').forEach(b => b.classList.remove('active'));
-                dPad.classList.add('hidden');
                 onCommitCallback();
+                clearSelection();
             }
         });
+
+        const fbBtn = document.getElementById('feedback-btn');
+        if (fbBtn) fbBtn.addEventListener('click', () => alert("Thank you for playtesting! Report bugs to the arena master."));
+
+        initialized = true;
     }
 
-    function enableCommit() {
-        commitBtn.classList.remove('disabled');
+    function clearSelection() {
+        selectedActionType = null;
+        actionBtns.forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.ability-btn').forEach(b => b.classList.remove('active'));
+        dPad.classList.add('hidden');
+        disableCommit();
+
+        pendingCard.innerHTML = '<span>NO ACTION SELECTED</span>';
+        pendingCard.classList.add('empty');
     }
 
-    function disableCommit() {
-        commitBtn.classList.add('disabled');
-    }
-
-    function hideOnboarding() {
-        onboardingOverlay.classList.add('hidden');
-    }
+    function enableCommit() { commitBtn.classList.remove('disabled'); }
+    function disableCommit() { commitBtn.classList.add('disabled'); }
+    function hideOnboarding() { document.getElementById('onboarding-overlay').classList.add('hidden'); }
 
     function setLocked(isLocked) {
         if (isLocked) {
-            actionDock.classList.add('locked');
+            mainLayout.classList.add('locked');
+            document.querySelector('.action-bar-overlay').classList.add('locked');
         } else {
-            actionDock.classList.remove('locked');
+            mainLayout.classList.remove('locked');
+            document.querySelector('.action-bar-overlay').classList.remove('locked');
         }
     }
 
-    function render(state, perspective, events) {
-        // 0. Render Abilities
+    function render(state, perspective) {
+        currentPerspective = perspective;
+        turnNumEl.innerText = state.turn;
+        phaseEl.innerText = `PHASE: PLANNING`;
+
+        const myLabel = document.getElementById('my-role-label');
+        if (myLabel) myLabel.innerText = `YOU (${perspective.toUpperCase()})`;
+
+        // Ability Track
         abilityTrack.innerHTML = '';
         state.abilities.forEach(id => {
             const btn = document.createElement('button');
             const info = ABILITIES[id];
             btn.classList.add('action-btn', 'ability-btn');
-            btn.innerText = `${info.name} (${info.cost})`;
-            btn.title = info.desc;
+            btn.innerText = `${info.name}`;
             btn.dataset.id = id;
 
             btn.addEventListener('click', () => {
@@ -109,8 +122,7 @@
                 btn.classList.add('active');
 
                 onInputCallback('ability', { id: id });
-
-                selectedActionType = 'ability'; // Allow d-pad
+                selectedActionType = 'ability';
 
                 if (id === 'blink') {
                     dPad.classList.remove('hidden');
@@ -120,69 +132,123 @@
                     enableCommit();
                 }
             });
-
             abilityTrack.appendChild(btn);
         });
 
-        // 1. Grid
-        gridEl.innerHTML = '';
+        renderGrid(state);
+        updateHud('p1', state.players.p1);
+        updateHud('p2', state.players.p2);
 
+        if (state.log && state.log.length > 0) {
+            state.log.forEach(l => appendLog(l, 'recap'));
+        }
+    }
+
+    function renderGrid(state) {
+        gridEl.innerHTML = '';
         for (let y = 0; y < CONSTANTS.GRID_SIZE; y++) {
             for (let x = 0; x < CONSTANTS.GRID_SIZE; x++) {
                 const cell = document.createElement('div');
                 cell.classList.add('cell');
-                cell.dataset.x = x;
-                cell.dataset.y = y;
 
-                const tileKey = `${x},${y}`;
-                const tile = state.tiles[tileKey];
+                const tile = state.tiles[`${x},${y}`];
                 if (tile) {
                     cell.classList.add(tile.type);
                     if (tile.cooldown > 0) {
                         cell.classList.add('cooldown');
                         cell.innerText = tile.cooldown;
                     } else {
-                        const icon = document.createElement('span');
-                        icon.classList.add('tile-icon');
-                        icon.innerText = tile.type === 'energy' ? '⚡' :
-                            tile.type === 'heal' ? '🩹' : '🌟';
-                        cell.appendChild(icon);
+                        const icon = tile.type === 'energy' ? '⚡' : tile.type === 'heal' ? '🩹' : '🌟';
+                        cell.innerHTML = `<span class="tile-icon">${icon}</span>`;
                     }
-
-                    // Check if contested (if we want to show it after turn resolution)
-                    // Currently, log handles it, but we could add a flag to state.
                 }
 
-                // Render Units
                 if (state.players.p1.x === x && state.players.p1.y === y) {
                     const p1 = document.createElement('div');
                     p1.classList.add('unit', 'p1');
-                    if (state.players.p1.shield) p1.style.border = '3px solid white';
+                    if (state.players.p1.shield) p1.style.boxShadow = '0 0 20px white';
                     cell.appendChild(p1);
                 }
                 if (state.players.p2.x === x && state.players.p2.y === y) {
                     const p2 = document.createElement('div');
                     p2.classList.add('unit', 'p2');
-                    if (state.players.p2.shield) p2.style.border = '3px solid white';
+                    if (state.players.p2.shield) p2.style.boxShadow = '0 0 20px white';
                     cell.appendChild(p2);
                 }
-
                 gridEl.appendChild(cell);
             }
         }
+    }
 
-        // 2. HUDs
-        updateHud('p1', state.players.p1);
-        updateHud('p2', state.players.p2);
+    function animateResolution(prevState, events, finalState, perspective, callback) {
+        phaseEl.innerText = `PHASE: RESOLUTION`;
+        let step = 0;
+        let tempState = JSON.parse(JSON.stringify(prevState));
 
-        // 3. Phase Indicator
-        document.getElementById('phase-indicator').innerText = `TURN ${state.turn}: ${perspective.toUpperCase()}`;
+        const processNext = () => {
+            if (step >= events.length) {
+                render(finalState, perspective);
+                setTimeout(callback, 800);
+                return;
+            }
 
-        // 4. Action Log
-        if (state.log && state.log.length > 0) {
-            const logContent = document.getElementById('log-content');
-            logContent.innerHTML = state.log.map(l => `<div class="log-line">${l}</div>`).join('');
-            logContent.scrollTop = logContent.scrollHeight;
+            const event = events[step];
+            updateTempState(tempState, event);
+            handleAnimateEvent(event, tempState);
+            step++;
+            setTimeout(processNext, 500);
+        };
+
+        processNext();
+    }
+
+    function updateTempState(state, ev) {
+        if (ev.type === 'move') {
+            state.players[ev.player].x = ev.to.x;
+            state.players[ev.player].y = ev.to.y;
+        }
+        if (ev.type === 'hit') {
+            state.players[ev.target].hp -= ev.damage;
+        }
+        if (ev.type === 'harvest') {
+            if (ev.tile === 'energy') state.players[ev.player].nrg += 1;
+            if (ev.tile === 'heal') state.players[ev.player].hp += 1;
+        }
+        if (ev.type === 'regen') {
+            state.players.p1.nrg = ev.p1;
+            state.players.p2.nrg = ev.p2;
+        }
+    }
+
+    function handleAnimateEvent(ev, tempState) {
+        if (ev.type === 'energy') {
+            appendLog(`[${ev.player.toUpperCase()}] Energy used: ${ev.cost}`, 'system');
+            updateHud(ev.player, tempState.players[ev.player]);
+        }
+        if (ev.type === 'move') {
+            appendLog(`[${ev.player.toUpperCase()}] Moved to ${ev.to.x},${ev.to.y}`, 'action');
+            renderGrid(tempState);
+        }
+        if (ev.type === 'harvest') {
+            appendLog(`[HARVEST] ${ev.player.toUpperCase()} got ${ev.tile.toUpperCase()}!`, 'system');
+            updateHud(ev.player, tempState.players[ev.player]);
+        }
+        if (ev.type === 'hit') {
+            appendLog(`[COMBAT] ${ev.target.toUpperCase()} took damage!`, 'combat');
+            updateHud(ev.target, tempState.players[ev.target]);
+            renderGrid(tempState);
+            const target = document.querySelector(`.unit.${ev.target}`);
+            if (target) {
+                target.classList.add('shake');
+                setTimeout(() => target.classList.remove('shake'), 500);
+            }
+        }
+        if (ev.type === 'shield') {
+            appendLog(`[COMBAT] Attack blocked by shield!`, 'combat');
+        }
+        if (ev.type === 'collision') {
+            appendLog(`[COLLISION] Players bounced!`, 'combat');
+            renderGrid(tempState);
         }
     }
 
@@ -192,47 +258,48 @@
         const hpVal = document.getElementById(`${id}-hp-val`);
         const nrgVal = document.getElementById(`${id}-nrg-val`);
 
-        const hpPct = (pState.hp / CONSTANTS.MAX_HP) * 100;
-        const nrgPct = (pState.nrg / CONSTANTS.MAX_ENERGY) * 100;
-
-        hpBar.style.width = `${hpPct}%`;
-        nrgBar.style.width = `${nrgPct}%`;
-
+        hpBar.style.width = `${(pState.hp / CONSTANTS.MAX_HP) * 100}%`;
+        nrgBar.style.width = `${(pState.nrg / CONSTANTS.MAX_ENERGY) * 100}%`;
         hpVal.innerText = `${pState.hp}/${CONSTANTS.MAX_HP}`;
         nrgVal.innerText = `${pState.nrg}/${CONSTANTS.MAX_ENERGY}`;
     }
 
-    function appendLog(msg) {
+    function updatePreview(player, action, currentEnergy) {
+        pendingCard.classList.remove('empty');
+        const dirIcon = action.dir ? ` <b>${action.dir.toUpperCase()}</b>` : '';
+        const name = action.id ? ABILITIES[action.id].name : action.type.toUpperCase();
+
+        pendingCard.innerHTML = `<h4>${name}${dirIcon}</h4><p>COST: ${action.cost}</p>`;
+
+        const remaining = currentEnergy - action.cost;
+        energyPreview.innerText = `NRG: ${currentEnergy} ➔ ${remaining}`;
+        energyPreview.style.color = remaining < 0 ? 'red' : 'var(--accent)';
+    }
+
+    function appendLog(msg, type = '') {
         const d = document.createElement('div');
-        d.innerText = `> ${msg}`;
-        d.style.borderBottom = "1px solid #333";
-        d.style.padding = "4px";
+        d.classList.add('log-line');
+        if (type) d.classList.add(type);
+        d.innerHTML = `<span class="time">[${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]</span> ${msg}`;
         logEl.prepend(d);
+        logEl.scrollTop = 0;
     }
 
     function showOverlay(title, btnText, onNext) {
         overlayText.innerText = title;
         nextBtn.innerText = btnText;
         overlayEl.classList.remove('hidden');
-
         const newBtn = nextBtn.cloneNode(true);
         nextBtn.parentNode.replaceChild(newBtn, nextBtn);
         newBtn.addEventListener('click', onNext);
-        // CRITICAL FIX: Update the global reference so next call works
-        nextBtn = newBtn; // This requires nextBtn to be 'let' not 'const'
+        nextBtn = newBtn;
     }
 
-    function hideOverlay() {
-        overlayEl.classList.add('hidden');
-    }
-
-    function updatePreview(player, action) {
-        // Placeholder
-    }
+    function hideOverlay() { overlayEl.classList.add('hidden'); }
 
     // Expose
     window.GameUI = {
         init, render, showOverlay, hideOverlay, updatePreview, appendLog,
-        hideOnboarding, setLocked
+        hideOnboarding, setLocked, animateResolution
     };
 })();

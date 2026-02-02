@@ -1,6 +1,43 @@
 # Shared Intent Arena
 
-A deterministic, strategy-focused browser game where two players compete using hidden simultaneous actions on a large strategic map.
+Deterministic. Hidden. Strategic.
+
+## Technical Architecture
+
+### 🧠 Feature Flag System
+The game uses a future-proof menu system controlled by feature flags in `js/config.js`. This allows the UI to feel finished while hiding features that are currently in development.
+
+**How to enable future modes:**
+1. Open `js/config.js`.
+2. Toggle the desired flag in the `FLAGS` object:
+   ```javascript
+   FLAGS: {
+       FRIEND_PLAY: true,    // Currently Active
+       MATCHMAKING: false,   // Set to true to show in UI
+       AI_MODE: false,       // Set to true to show in UI
+       RANKED: false         // Set to true to show in UI
+   }
+   ```
+3. The Menu System will automatically render the new buttons on the Select Mode screen.
+
+### 🔑 Room System
+The **Friend Play** mode uses a 6-digit alphanumeric room code system.
+- **Create Room**: Generates a unique code and enters a lobby.
+- **Join Room**: Requires an exact match of the 6-digit code.
+- **Lobby**: Automated transition to match start once both players are present.
+
+### UI/UX Flow
+- **Landing**: Minimalist [ PLAY ] entrance.
+- **Options**: Context-aware mode selection.
+- **Friend Play**: Dedicated zone for code generation and entry.
+- **Match**: The classic 3-column strategic grid.
+
+## Development
+Run the server locally:
+```bash
+npm start
+```
+Default port is 3000.
 
 ## 🎮 How to Play
 **Objective**: Reduce opponent's Health to 0 OR checkmate them (remove all legal moves).

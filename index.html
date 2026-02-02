@@ -10,137 +10,174 @@
 </head>
 
 <body>
-    <div id="onboarding-overlay" class="overlay">
-        <div class="glass-panel onboarding-content">
+    <!-- Menu System -->
+    <div id="menu-system" class="overlay">
+        <!-- Screens will be injected here by menu.js -->
+        <div id="landing-screen" class="glass-panel menu-screen">
             <h1>SHARED INTENT <span class="highlight">ARENA</span></h1>
             <p class="tagline">Deterministic. Hidden. Strategic.</p>
+            <div class="primary-actions">
+                <button id="play-btn" class="glow-btn x-large">PLAY</button>
+            </div>
+            <p class="footer-note">v0.6.0 | Playtest ready</p>
+        </div>
 
-            <div class="rules-grid">
-                <div class="rule-box">
-                    <h3>🎯 GOAL</h3>
-                    <p>Reduce opponent HP to 0. Move to contest resources in the 16x16 arena.</p>
+        <div id="options-screen" class="glass-panel menu-screen hidden">
+            <h2>SELECT MODE</h2>
+            <div id="mode-list" class="primary-actions">
+                <!-- Modes injected based on Feature Flags -->
+            </div>
+            <button class="back-btn">← BACK</button>
+        </div>
+
+        <div id="room-screen" class="glass-panel menu-screen hidden">
+            <h2 id="room-title">FRIEND PLAY</h2>
+            <div class="room-actions">
+                <div id="create-room-zone">
+                    <button id="create-room-btn" class="glow-btn">CREATE ROOM</button>
+                    <p class="sub-text">Generate a 6-digit code for a friend.</p>
                 </div>
-                <div class="rule-box">
-                    <h3>⚡ ENERGY</h3>
-                    <p>Every action costs energy. Regen +1 per turn. +1 Bonus for variety!</p>
-                </div>
-                <div class="rule-box">
-                    <h3>🧠 HIDDEN TURNS</h3>
-                    <p>Actions are secret until both players commit. Prediction is key.</p>
-                </div>
-                <div class="rule-box">
-                    <h3>💎 RESOURCES</h3>
-                    <p>⚡ Energy, 🩹 Heal, 🌟 Special. Contest them to win!</p>
+
+                <div class="divider"><span>OR</span></div>
+
+                <div id="join-room-zone">
+                    <input type="text" id="room-input" placeholder="ENTER 6-DIGIT CODE" maxlength="6">
+                    <button id="join-room-btn" class="glow-btn">JOIN ROOM</button>
+                    <p id="room-error" class="error-text hidden"></p>
                 </div>
             </div>
+            <button class="back-btn">← BACK</button>
+        </div>
 
-            <button id="start-game-btn" class="glow-btn">ENTER ARENA</button>
-            <p class="footer-note">Public Playtest v0.5</p>
+        <div id="lobby-screen" class="glass-panel menu-screen hidden">
+            <h2>ROOM LOBBY</h2>
+            <div class="lobby-info">
+                <p>Room Code:</p>
+                <div id="display-room-code" class="huge-text">------</div>
+                <p class="waiting-animation">Waiting for opponent...</p>
+            </div>
+            <button id="cancel-room-btn" class="back-btn">CANCEL</button>
         </div>
     </div>
     <div id="app">
-        <header class="game-header">
-            <h1>SHARED INTENT <span class="highlight">ARENA</span></h1>
+        <header class="top-bar glass-panel">
+            <div class="turn-info">TURN <span id="turn-num">1</span></div>
             <div id="phase-indicator" class="phase-display">PHASE: PLANNING</div>
+            <div class="server-status">SERVER: <span class="status-dot green"></span> ONLINE</div>
         </header>
 
-        <main class="game-container">
-            <!-- Player 1 HUD -->
-            <section id="p1-hud" class="player-hud p1 right-align">
-                <div class="hud-card glass-panel">
-                    <h2>PLAYER 1</h2>
-                    <div class="stats">
+        <div class="main-layout">
+            <!-- Left Panel: My Stats & Abilities -->
+            <aside class="side-panel left-panel">
+                <section id="my-stats-container" class="panel-section stats-card glass-panel">
+                    <h2 id="my-role-label">MY STATS</h2>
+                    <div id="p1-hud" class="player-hud p1">
                         <div class="stat-row">
                             <span class="label">HP</span>
                             <div class="bar-container">
-                                <div id="p1-hp-bar" class="stat-bar hp" style="width: 100%"></div>
+                                <div id="p1-hp-bar" class="stat-bar hp"></div>
                             </div>
-                            <span id="p1-hp-val" class="value">3/3</span>
+                            <span id="p1-hp-val" class="value">5/5</span>
                         </div>
                         <div class="stat-row">
                             <span class="label">NRG</span>
                             <div class="bar-container">
-                                <div id="p1-nrg-bar" class="stat-bar nrg" style="width: 100%"></div>
+                                <div id="p1-nrg-bar" class="stat-bar nrg"></div>
                             </div>
-                            <span id="p1-nrg-val" class="value">3/3</span>
+                            <span id="p1-nrg-val" class="value">5/5</span>
                         </div>
                     </div>
-                </div>
-            </section>
+                </section>
 
-            <!-- Game Board -->
-            <section class="board-wrapper">
-                <div id="game-grid" class="grid-container">
-                    <!-- Cells generated by JS -->
-                </div>
-                <div id="overlay-message" class="overlay hidden">
-                    <h2 id="overlay-text">READY?</h2>
-                    <button id="next-phase-btn" class="glow-btn">START TURN</button>
-                </div>
-            </section>
-
-            <!-- Player 2 HUD -->
-            <section id="p2-hud" class="player-hud p2">
-                <div class="hud-card glass-panel">
-                    <h2>PLAYER 2</h2>
-                    <div class="stats">
-                        <div class="stat-row">
-                            <span class="label">HP</span>
-                            <div class="bar-container">
-                                <div id="p2-hp-bar" class="stat-bar hp" style="width: 100%"></div>
-                            </div>
-                            <span id="p2-hp-val" class="value">3/3</span>
-                        </div>
-                        <div class="stat-row">
-                            <span class="label">NRG</span>
-                            <div class="bar-container">
-                                <div id="p2-nrg-bar" class="stat-bar nrg" style="width: 100%"></div>
-                            </div>
-                            <span id="p2-nrg-val" class="value">3/3</span>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        <footer class="controls-area glass-panel">
-            <div id="action-panel" class="action-dock">
-                <div class="action-group">
-                    <h3>ACTIONS</h3>
-                    <div class="btn-group">
-                        <button class="action-btn" data-type="move">MOVE</button>
-                        <button class="action-btn" data-type="attack">ATTACK</button>
-                        <button class="action-btn" data-type="defend">DEFEND</button>
-                    </div>
-                </div>
-
-                <div id="direction-pad" class="d-pad hidden">
-                    <button class="d-btn up" data-dir="up">▲</button>
-                    <button class="d-btn left" data-dir="left">◀</button>
-                    <button class="d-btn right" data-dir="right">▶</button>
-                    <button class="d-btn down" data-dir="down">▼</button>
-                </div>
-
-                <div class="action-group abilities">
+                <section class="panel-section glass-panel">
                     <h3>SHARED ABILITIES</h3>
                     <div id="ability-track" class="ability-list">
-                        <!-- Abilities injected here -->
+                        <!-- Injected -->
                     </div>
+                </section>
+            </aside>
+
+            <!-- Center: The Grid -->
+            <main class="grid-viewport">
+                <div id="game-grid" class="grid-container">
+                    <!-- Injected -->
                 </div>
 
-                <div class="action-group commit">
-                    <button id="commit-btn" class="commit-btn disabled">COMMIT ACTION</button>
+                <div id="overlay-message" class="overlay hidden">
+                    <div class="glass-panel overlay-card">
+                        <h2 id="overlay-text">READY?</h2>
+                        <button id="next-phase-btn" class="glow-btn">START TURN</button>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Panel: Opponent & Intent -->
+            <aside class="side-panel right-panel">
+                <section id="opp-stats-container" class="panel-section stats-card glass-panel">
+                    <h2>OPPONENT</h2>
+                    <div id="p2-hud" class="player-hud p2">
+                        <div class="stat-row">
+                            <span class="label">HP</span>
+                            <div class="bar-container">
+                                <div id="p2-hp-bar" class="stat-bar hp"></div>
+                            </div>
+                            <span id="p2-hp-val" class="value">5/5</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="label">NRG</span>
+                            <div class="bar-container">
+                                <div id="p2-nrg-bar" class="stat-bar nrg"></div>
+                            </div>
+                            <span id="p2-nrg-val" class="value">5/5</span>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="panel-section glass-panel">
+                    <h3>INTENT QUEUE</h3>
+                    <div id="intent-display" class="intent-box">
+                        <div id="pending-action-card" class="action-card empty">
+                            <span>NO ACTION SELECTED</span>
+                        </div>
+                        <div id="energy-preview" class="energy-preview-text">
+                            COST: 0 | REMAINING: 5
+                        </div>
+                    </div>
+                    <button id="commit-btn" class="commit-btn disabled">LOCK INTENT</button>
+                </section>
+
+                <section id="log-panel" class="panel-section log-panel glass-panel">
+                    <h3>ACTION LOG</h3>
+                    <div id="log-content">Match Start.</div>
+                </section>
+            </aside>
+        </div>
+
+        <footer class="action-bar-overlay">
+            <div id="action-panel" class="action-dock">
+                <div class="btn-group">
+                    <button class="action-btn" data-type="move">MOVE</button>
+                    <button class="action-btn" data-type="attack">ATTACK</button>
+                    <button class="action-btn" data-type="defend">DEFEND</button>
+                </div>
+                <div id="direction-pad" class="d-pad hidden">
+                    <button class="d-btn up" data-dir="up">▲</button>
+                    <div class="d-middle">
+                        <button class="d-btn left" data-dir="left">◀</button>
+                        <button class="d-btn right" data-dir="right">▶</button>
+                    </div>
+                    <button class="d-btn down" data-dir="down">▼</button>
                 </div>
             </div>
-            <div id="log-panel" class="log-panel">
-                <div id="log-content">Match Start.</div>
-            </div>
+            <button id="feedback-btn" class="mini-btn">FEEDBACK</button>
         </footer>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
+    <script src="js/config.js"></script>
     <script src="js/logic.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/menu.js"></script>
     <script src="js/game.js"></script>
 </body>
 
