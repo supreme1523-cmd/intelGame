@@ -17,17 +17,23 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname, '../')));
 
 // Database connection pool
-const pool = new Pool({
-    user: process.env.DB_USER,
-    host: process.env.DB_HOST,
-    database: process.env.DB_NAME,
-    password: process.env.DB_PASS,
-    port: process.env.DB_PORT || 5432,
-    ssl: { rejectUnauthorized: false } // Required for Render/Managed DBs
-});
+let pool = null;
+if (process.env.DATABASE_URL) {
+    pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Required for Render/Managed DBs
+    });
+    console.log("Database connection initialized via DATABASE_URL.");
+} else {
+    console.warn("DATABASE_URL not found. Feedback system will be disabled.");
+}
 
 // Feedback Endpoint
 app.post('/feedback', async (req, res) => {
+    if (!pool) {
+        return res.status(503).json({ error: 'Feedback system is currently unavailable (no DB connection).' });
+    }
+
     const { name, email_or_contact, rating, comments } = req.body;
 
     // Validation
@@ -55,7 +61,11 @@ app.post('/feedback', async (req, res) => {
         );
         res.status(200).json({ message: 'Feedback submitted successfully! Thank you.' });
     } catch (err) {
-        console.error('Database Error:', err);
+        if (err.code === 'ENOTFOUND') {
+            console.error('Database DNS Error (ENOTFOUND): Could not resolve hostname. If running locally, ensure you are using the EXTERNAL Database URL, not the internal (dpg-...) one.');
+        } else {
+            console.error('Database Error:', err);
+        }
         res.status(500).json({ error: 'Failed to save feedback. Please try again later.' });
     }
 });
