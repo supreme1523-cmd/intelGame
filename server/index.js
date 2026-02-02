@@ -3,14 +3,62 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
+const { Pool } = require('pg');
 const GameLogic = require('../js/logic.js'); // Shared Logic
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Serve static files from root
+// Body parser for feedback
+app.use(express.json());
+
+// Serving static files
 app.use(express.static(path.join(__dirname, '../')));
+
+// Database connection pool
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASS,
+    port: process.env.DB_PORT || 5432,
+    ssl: { rejectUnauthorized: false } // Required for Render/Managed DBs
+});
+
+// Feedback Endpoint
+app.post('/feedback', async (req, res) => {
+    const { name, email_or_contact, rating, comments } = req.body;
+
+    // Validation
+    if (!comments || typeof comments !== 'string' || comments.trim().length === 0) {
+        return res.status(400).json({ error: 'Comments are required.' });
+    }
+
+    if (comments.length > 2000) {
+        return res.status(400).json({ error: 'Comment too long (max 2000 chars).' });
+    }
+
+    const feedbackData = {
+        name: (name || '').slice(0, 100),
+        email_or_contact: (email_or_contact || '').slice(0, 150),
+        rating: parseInt(rating) || null,
+        comments: comments.slice(0, 2000),
+        userAgent: req.headers['user-agent'],
+        ip_hash: req.ip // Basic abuse prevention if needed
+    };
+
+    try {
+        await pool.query(
+            'INSERT INTO feedback_forms (data) VALUES ($1)',
+            [JSON.stringify(feedbackData)]
+        );
+        res.status(200).json({ message: 'Feedback submitted successfully! Thank you.' });
+    } catch (err) {
+        console.error('Database Error:', err);
+        res.status(500).json({ error: 'Failed to save feedback. Please try again later.' });
+    }
+});
 
 // Explicitly serve index.html for the root route
 app.get('/', (req, res) => {

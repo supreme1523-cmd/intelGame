@@ -173,11 +173,54 @@
         </footer>
     </div>
 
+    <!-- Feedback Modal -->
+    <div id="feedback-modal" class="overlay hidden">
+        <div class="glass-panel feedback-content">
+            <h2>ARENA FEEDBACK</h2>
+            <p class="sub-text">Help us improve the strategic experience.</p>
+
+            <form id="feedback-form">
+                <div class="form-group">
+                    <label>NAME (OPTIONAL)</label>
+                    <input type="text" id="fb-name" placeholder="Anonymous Arena Master">
+                </div>
+
+                <div class="form-group">
+                    <label>CONTACT / EMAIL (OPTIONAL)</label>
+                    <input type="text" id="fb-contact" placeholder="For follow-up questions">
+                </div>
+
+                <div class="form-group">
+                    <label>RATING (1-5)</label>
+                    <div class="rating-group">
+                        <input type="radio" name="rating" value="1" id="r1"><label for="r1">1</label>
+                        <input type="radio" name="rating" value="2" id="r2"><label for="r2">2</label>
+                        <input type="radio" name="rating" value="3" id="r3"><label for="r3">3</label>
+                        <input type="radio" name="rating" value="4" id="r4"><label for="r4">4</label>
+                        <input type="radio" name="rating" value="5" id="r5" checked><label for="r5">5</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>COMMENTS (REQUIRED)</label>
+                    <textarea id="fb-comments" rows="4"
+                        placeholder="What did you think of the turn resolution? Any bugs?"></textarea>
+                </div>
+
+                <div class="primary-actions">
+                    <button type="submit" class="glow-btn">SUBMIT FEEDBACK</button>
+                    <button type="button" id="close-feedback-btn" class="back-btn">CANCEL</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/config.js"></script>
     <script src="js/logic.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/menu.js"></script>
+    <script src="js/feedback.js"></script>
     <script src="js/game.js"></script>
 </body>
 

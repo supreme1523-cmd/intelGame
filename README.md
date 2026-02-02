@@ -32,9 +32,28 @@ The **Friend Play** mode uses a 6-digit alphanumeric room code system.
 - **Friend Play**: Dedicated zone for code generation and entry.
 - **Match**: The classic 3-column strategic grid.
 
+## 📮 Feedback System
+
+The game includes a flexible feedback collection system powered by PostgreSQL.
+
+### Render / PostgreSQL Setup
+1. **Database Initialization**: Run the SQL script found in `db/init.sql` on your PostgreSQL instance to create the necessary table.
+2. **Environment Variables**: Set the following variables in your Render dashboard:
+   - `DB_USER`: Your DB username.
+   - `DB_PASS`: Your DB password.
+   - `DB_HOST`: Your DB host address.
+   - `DB_PORT`: `5432` (default).
+   - `DB_NAME`: Your database name.
+
+### Technical Implementation
+- **Data Storage**: Uses a `JSONB` column (`data`) to store feedback objects. This allows adding new fields (like device info or bug categories) without database migrations.
+- **Backend**: An Express endpoint `POST /feedback` validates inputs and prevents abuse with length limits.
+- **Frontend**: A minimal, styled modal accessible via the footer "FEEDBACK" button.
+
 ## Development
 Run the server locally:
 ```bash
+npm install
 npm start
 ```
 Default port is 3000.

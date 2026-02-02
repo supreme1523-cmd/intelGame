@@ -595,3 +595,86 @@ body {
         font-size: 2.5rem;
     }
 }
+
+/* Feedback Modal Styles */
+.feedback-content {
+    width: 90%;
+    max-width: 500px;
+    padding: 2.5rem;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.feedback-content h2 {
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.feedback-content .sub-text {
+    text-align: center;
+    color: #888;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.2rem;
+}
+
+.form-group label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 1.5px;
+}
+
+.form-group input,
+.form-group textarea {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 0.8rem;
+    color: white;
+    font-family: inherit;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 10px rgba(0, 243, 255, 0.1);
+}
+
+.rating-group {
+    display: flex;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    justify-content: space-between;
+}
+
+.rating-group div {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.rating-group label {
+    color: white;
+    font-weight: 400;
+    cursor: pointer;
+}
+
+.rating-group input {
+    cursor: pointer;
+}
+
+#fb-comments {
+    resize: none;
+}
