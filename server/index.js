@@ -112,6 +112,73 @@ app.post('/feedback', async (req, res) => {
     }
 });
 
+// Admin Feedback Viewer
+app.get('/admin/feedback', async (req, res) => {
+    const key = req.query.key;
+    const adminKey = process.env.ADMIN_VIEW_KEY;
+
+    if (!adminKey || key !== adminKey) {
+        return res.status(403).send('<h1>Forbidden</h1><p>Invalid or missing ADMIN_VIEW_KEY.</p>');
+    }
+
+    if (!pool) {
+        return res.status(503).send('<h1>Service Unavailable</h1><p>Database not connected.</p>');
+    }
+
+    try {
+        const result = await pool.query('SELECT submitted_at, data FROM feedback_forms ORDER BY submitted_at DESC');
+
+        let html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Arena Feedback Admin</title>
+                <style>
+                    body { font-family: sans-serif; background: #0a0a0b; color: #eee; padding: 2rem; }
+                    table { width: 100%; border-collapse: collapse; margin-top: 1rem; background: rgba(255,255,255,0.05); }
+                    th, td { padding: 1rem; border: 1px solid #333; text-align: left; vertical-align: top; }
+                    th { background: rgba(0, 243, 255, 0.1); color: #00f3ff; }
+                    tr:hover { background: rgba(255,255,255,0.08); }
+                    .rating { font-weight: bold; color: #fbbf24; }
+                </style>
+            </head>
+            <body>
+                <h1>Arena Feedback Master List</h1>
+                <p>Newest first. Protected by key.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Submitted At</th>
+                            <th>Player</th>
+                            <th>Contact</th>
+                            <th>Rating</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        result.rows.forEach(row => {
+            const d = row.data;
+            html += `
+                <tr>
+                    <td>${new Date(row.submitted_at).toLocaleString()}</td>
+                    <td>${d.name || 'Anonymous'}</td>
+                    <td>${d.email_or_contact || '-'}</td>
+                    <td class="rating">${d.rating || '-'} / 5</td>
+                    <td>${d.comments}</td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table></body></html>';
+        res.send(html);
+    } catch (err) {
+        console.error('Admin DB Error:', err);
+        res.status(500).send('Database Error fetching feedback.');
+    }
+});
+
 // Explicitly serve index.html for the root route
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../index.html'));

@@ -10,10 +10,17 @@
     const fbComments = document.getElementById('fb-comments');
 
     function init() {
-        if (!feedbackBtn) return;
+        const triggers = [
+            document.getElementById('feedback-btn'),
+            document.getElementById('landing-feedback-btn')
+        ].filter(el => el !== null);
 
-        feedbackBtn.addEventListener('click', () => {
-            feedbackModal.classList.remove('hidden');
+        if (triggers.length === 0) return;
+
+        triggers.forEach(btn => {
+            btn.addEventListener('click', () => {
+                feedbackModal.classList.remove('hidden');
+            });
         });
 
         closeFeedbackBtn.addEventListener('click', () => {
