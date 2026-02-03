@@ -104,11 +104,14 @@ app.post('/feedback', async (req, res) => {
         res.status(200).json({ message: 'Feedback submitted successfully! Thank you.' });
     } catch (err) {
         if (err.code === 'ENOTFOUND') {
-            console.error('Database DNS Error (ENOTFOUND): Could not resolve hostname. If running locally, ensure you are using the EXTERNAL Database URL, not the internal (dpg-...) one.');
+            const dnsMsg = `Database DNS Error (ENOTFOUND): Could not resolve hostname. If running locally, ensure you are using the EXTERNAL Database URL, not the internal (dpg-...) one.`;
+            console.error(dnsMsg);
+            res.status(500).json({ error: dnsMsg, detail: err.message });
         } else {
             console.error('Database Error:', err);
+            // Temporarily returning full error for live debugging
+            res.status(500).json({ error: 'Failed to save feedback.', detail: err.message, code: err.code });
         }
-        res.status(500).json({ error: 'Failed to save feedback. Please try again later.' });
     }
 });
 
