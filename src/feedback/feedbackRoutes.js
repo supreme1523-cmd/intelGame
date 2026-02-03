@@ -149,11 +149,12 @@ router.get('/admin/feedback', async (req, res) => {
             <body>
                 <h1>Arena Feedback Master List</h1>
                 <table>
-                    <thead><tr><th>Time</th><th>Player</th><th>Rating</th><th>Comments</th></tr></thead>
+                    <thead><tr><th>Time</th><th>Player</th><th>Contact</th><th>Rating</th><th>Comments</th></tr></thead>
                     <tbody>
         `;
         result.rows.forEach(row => {
-            html += `<tr><td>${new Date(row.submitted_at).toLocaleString()}</td><td>${row.data.name || 'Anon'}</td><td>${row.data.rating}/5</td><td>${row.data.comments}</td></tr>`;
+            const d = row.data;
+            html += `<tr><td>${new Date(row.submitted_at).toLocaleString()}</td><td>${d.name || 'Anon'}</td><td>${d.email_or_contact || '-'}</td><td>${d.rating}/5</td><td>${d.comments}</td></tr>`;
         });
         html += '</tbody></table></body></html>';
         res.send(html);
