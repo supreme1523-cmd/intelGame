@@ -179,7 +179,7 @@ app.get('/feedback', (req, res) => {
             </script>
         </body>
         </html>
-    });
+    `);
 });
 
 // Admin Feedback Viewer
@@ -224,7 +224,7 @@ app.get('/admin/feedback', async (req, res) => {
 
     try {
         const result = await pool.query('SELECT submitted_at, data FROM feedback_forms ORDER BY submitted_at DESC');
-        
+
         let html = `
             <!DOCTYPE html>
             <html>
