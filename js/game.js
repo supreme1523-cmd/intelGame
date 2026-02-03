@@ -9,19 +9,25 @@
     let pendingAction = null;
     let committed = false;
     let kernel = null;
+    let isLocal = false;
+    let botPlayer = null;
+    let aiDifficulty = 'Medium';
 
     // --- Menu Integration ---
     window.addEventListener('request_create_room', () => {
+        isLocal = false;
         ensureSocket();
         socket.emit('create_room');
     });
 
     window.addEventListener('request_join_room', (e) => {
+        isLocal = false;
         ensureSocket();
         socket.emit('join_room', { code: e.detail.code });
     });
 
     window.addEventListener('request_start_matchmaking', () => {
+        isLocal = false;
         ensureSocket();
         socket.emit('start_matchmaking');
     });
@@ -34,11 +40,35 @@
         if (socket) socket.emit('cancel_room');
     });
 
+    window.addEventListener('request_ai_match', (e) => {
+        isLocal = true;
+        aiDifficulty = e.detail.difficulty || 'Medium';
+        startLocalMatch();
+    });
+
     function ensureSocket() {
         if (!socket) {
             socket = io();
             setupSocketListeners();
         }
+    }
+
+    function startLocalMatch() {
+        myRole = 'p1';
+        kernel = new window.GameKernel();
+        botPlayer = new window.BotPlayer(
+            window.GameKernel,
+            window.MinimaxSearch,
+            window.StateEvaluator.evaluateState,
+            window.DifficultyConfig
+        );
+
+        currentState = kernel.getStateSnapshot();
+        window.dispatchEvent(new CustomEvent('match_started'));
+        UI.setLocked(false);
+        UI.init(handleInput, handleCommit);
+        UI.render(currentState, myRole);
+        UI.appendLog(`Local Match Started! Difficulty: ${aiDifficulty}`);
     }
 
     // --- UI Callbacks ---
@@ -67,7 +97,44 @@
         }
 
         UI.appendLog("Locking Intent...");
-        socket.emit('submit_action', pendingAction);
+
+        if (isLocal) {
+            processLocalTurn(pendingAction);
+        } else {
+            socket.emit('submit_action', pendingAction);
+        }
+    }
+
+    function processLocalTurn(playerAction) {
+        committed = true;
+        UI.setLocked(true);
+        UI.appendLog("Processing turn...");
+
+        // 1. Bot Decides
+        const botAction = botPlayer.decideMove(currentState, 'p2', aiDifficulty);
+
+        // 2. Resolve
+        const actions = { p1: playerAction, p2: botAction };
+        const result = kernel.submitActions(actions);
+        const finalState = result.state;
+        const events = result.events;
+
+        // 3. Animate (Reuse existing logic)
+        setTimeout(() => {
+            committed = false;
+            pendingAction = null;
+            UI.animateResolution(currentState, events, finalState, myRole, () => {
+                currentState = finalState;
+                UI.setLocked(false);
+                UI.render(currentState, myRole);
+
+                if (currentState.status === 'game_over') {
+                    UI.showOverlay("GAME OVER", `Winner: ${currentState.winner}`, () => {
+                        window.location.reload();
+                    }, "RESTART");
+                }
+            });
+        }, 500);
     }
 
     // --- Socket Listeners ---
@@ -77,11 +144,11 @@
         });
 
         socket.on('room_created', (data) => {
-            window.dispatchEvent(new CustomEvent('room_created', { detail: data }));
+            window.dispatchEvent(clonedEvent('room_created', data));
         });
 
         socket.on('join_failed', (data) => {
-            window.dispatchEvent(new CustomEvent('join_failed', { detail: data }));
+            window.dispatchEvent(clonedEvent('join_failed', data));
         });
 
         socket.on('matchmaking_queued', () => {
@@ -136,5 +203,9 @@
                 window.location.reload();
             }, "RESTART");
         });
+    }
+
+    function clonedEvent(name, detail) {
+        return new CustomEvent(name, { detail });
     }
 })();

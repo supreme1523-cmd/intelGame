@@ -84,7 +84,7 @@
         }
 
         if (FLAGS.AI_MODE) {
-            addModeBtn('TRAINING (AI)', () => console.log('AI mode...'));
+            addModeBtn('TRAINING (AI)', () => showDifficultySelection());
         }
     }
 
@@ -94,6 +94,29 @@
         btn.innerText = text;
         btn.onclick = onClick;
         modeList.appendChild(btn);
+    }
+
+    function showDifficultySelection() {
+        modeList.innerHTML = '';
+        const title = document.querySelector('#options-screen h2');
+        const originalTitle = title.innerText;
+        title.innerText = 'SELECT DIFFICULTY';
+
+        ['Easy', 'Medium', 'Hard', 'Expert'].forEach(level => {
+            addModeBtn(level.toUpperCase(), () => {
+                title.innerText = originalTitle;
+                window.dispatchEvent(clonedEvent('request_ai_match', { difficulty: level }));
+            });
+        });
+
+        const back = document.createElement('button');
+        back.className = 'back-btn';
+        back.innerText = '← BACK TO MODES';
+        back.onclick = () => {
+            title.innerText = originalTitle;
+            renderModes();
+        };
+        modeList.appendChild(back);
     }
 
     function showScreen(name) {

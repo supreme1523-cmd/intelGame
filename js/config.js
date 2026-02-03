@@ -4,7 +4,7 @@ const CONFIG = {
     FLAGS: {
         FRIEND_PLAY: true,
         MATCHMAKING: true,
-        AI_MODE: false,
+        AI_MODE: true,
         RANKED: false
     },
 

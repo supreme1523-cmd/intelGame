@@ -160,17 +160,17 @@
         <footer class="action-bar-overlay">
             <div id="action-panel" class="action-dock">
                 <div class="btn-group">
-                    <button class="action-btn" data-type="move">MOVE</button>
-                    <button class="action-btn" data-type="attack">ATTACK</button>
-                    <button class="action-btn" data-type="defend">DEFEND</button>
+                    <button id="action-move" class="action-btn" data-type="move">MOVE</button>
+                    <button id="action-attack" class="action-btn" data-type="attack">ATTACK</button>
+                    <button id="action-defend" class="action-btn" data-type="defend">DEFEND</button>
                 </div>
                 <div id="direction-pad" class="d-pad hidden">
-                    <button class="d-btn up" data-dir="up">▲</button>
+                    <button id="dir-up" class="d-btn up" data-dir="up">▲</button>
                     <div class="d-middle">
-                        <button class="d-btn left" data-dir="left">◀</button>
-                        <button class="d-btn right" data-dir="right">▶</button>
+                        <button id="dir-left" class="d-btn left" data-dir="left">◀</button>
+                        <button id="dir-right" class="d-btn right" data-dir="right">▶</button>
                     </div>
-                    <button class="d-btn down" data-dir="down">▼</button>
+                    <button id="dir-down" class="d-btn down" data-dir="down">▼</button>
                 </div>
             </div>
             <button id="feedback-btn" class="mini-btn">FEEDBACK</button>
@@ -225,6 +225,12 @@
     <script src="js/ui.js"></script>
     <script src="js/menu.js"></script>
     <script src="js/feedback.js"></script>
+    <!-- AI System -->
+    <script src="js/players/Difficulty.js"></script>
+    <script src="js/players/Evaluation.js"></script>
+    <script src="js/players/Minimax.js"></script>
+    <script src="js/players/BotPlayer.js"></script>
+
     <script src="js/game.js"></script>
 </body>
 
