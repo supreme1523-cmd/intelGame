@@ -4,7 +4,7 @@
   "description": "A deterministic, strategy-focused browser game where two players compete using hidden simultaneous actions.",
   "main": "index.js",
   "scripts": {
-    "start": "node server/index.js",
+    "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
