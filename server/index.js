@@ -37,7 +37,7 @@ if (dbConfig.connectionString || dbConfig.host) {
     });
     console.log(`Database pool initialized using ${dbConfig.connectionString ? 'DATABASE_URL' : 'individual components'}.`);
 
-    // Test connection immediately
+    // Test connection and initialize schema
     pool.query('SELECT NOW()', (err, res) => {
         if (err) {
             console.error("CRITICAL: Database connection test failed!");
@@ -48,6 +48,22 @@ if (dbConfig.connectionString || dbConfig.host) {
             }
         } else {
             console.log("Database connection test successful:", res.rows[0].now);
+
+            // Initialize schema if needed
+            const initSql = `
+                CREATE TABLE IF NOT EXISTS feedback_forms (
+                    id SERIAL PRIMARY KEY,
+                    submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    data JSONB NOT NULL
+                );
+            `;
+            pool.query(initSql, (err) => {
+                if (err) {
+                    console.error("Failed to initialize database schema:", err);
+                } else {
+                    console.log("Database schema synchronized (feedback_forms table ready).");
+                }
+            });
         }
     });
 } else {
