@@ -1,5 +1,5 @@
 
-const GameLogic = require('../core/logic');
+const { GameKernel, DIRECTIONS, ABILITIES } = require('../core-game');
 const matchService = require('../matchmaking/matchService');
 const config = require('../config/serverConfig');
 
@@ -15,15 +15,17 @@ module.exports = function (io) {
                 const code = `RAND-${matchService.generateRoomCode().slice(0, 4)}`;
 
                 const match = matchService.createMatch(code, opponentId, socket.id, false);
+                const kernel = GameKernel.createNewGame();
+                match.kernel = kernel;
 
                 const p1Socket = io.sockets.sockets.get(opponentId);
                 const p2Socket = io.sockets.sockets.get(socket.id);
                 if (p1Socket) p1Socket.join(code);
                 if (p2Socket) p2Socket.join(code);
 
-                match.state = GameLogic.createInitialState();
-                io.to(opponentId).emit('match_start', { role: 'p1', state: match.state });
-                io.to(socket.id).emit('match_start', { role: 'p2', state: match.state });
+                const state = kernel.getStateSnapshot();
+                io.to(opponentId).emit('match_start', { role: 'p1', state });
+                io.to(socket.id).emit('match_start', { role: 'p2', state });
 
                 startTurnTimeout(io, code);
             } else {
@@ -38,7 +40,8 @@ module.exports = function (io) {
 
         socket.on('create_room', () => {
             const code = matchService.generateRoomCode();
-            matchService.createMatch(code, socket.id, null, true);
+            const match = matchService.createMatch(code, socket.id, null, true);
+            match.kernel = GameKernel.createNewGame();
             socket.join(code);
             socket.emit('room_created', { code });
         });
@@ -54,9 +57,9 @@ module.exports = function (io) {
             matchService.users[socket.id] = code;
             socket.join(code);
 
-            match.state = GameLogic.createInitialState();
-            io.to(match.p1).emit('match_start', { role: 'p1', state: match.state });
-            io.to(match.p2).emit('match_start', { role: 'p2', state: match.state });
+            const state = match.kernel.getStateSnapshot();
+            io.to(match.p1).emit('match_start', { role: 'p1', state });
+            io.to(match.p2).emit('match_start', { role: 'p2', state });
 
             startTurnTimeout(io, code);
         });
@@ -64,19 +67,19 @@ module.exports = function (io) {
         socket.on('submit_action', (rawAction) => {
             const roomId = matchService.getRoomOfUser(socket.id);
             const match = matchService.getMatch(roomId);
-            if (!match?.state) return;
+            if (!match?.kernel) return;
 
             const isP1 = socket.id === match.p1;
-            const action = sanitizeAction(rawAction);
 
+            // Basic sanitization/validation check before committing
             if (isP1) {
                 if (match.p1Action) return;
-                match.p1Action = action;
+                match.p1Action = rawAction;
                 socket.emit('action_committed');
                 if (match.p2) io.to(match.p2).emit('opponent_committed');
             } else {
                 if (match.p2Action) return;
-                match.p2Action = action;
+                match.p2Action = rawAction;
                 socket.emit('action_committed');
                 if (match.p1) io.to(match.p1).emit('opponent_committed');
             }
@@ -110,41 +113,33 @@ function startTurnTimeout(io, roomId) {
 
 function resolveMatchTurn(io, roomId) {
     const match = matchService.getMatch(roomId);
-    if (!match?.state) return;
+    if (!match?.kernel) return;
 
     if (match.timeout) clearTimeout(match.timeout);
 
-    const result = GameLogic.resolveTurn(match.state, match.p1Action, match.p2Action);
-    match.state = result.state;
-    match.p1Action = null;
-    match.p2Action = null;
+    const actions = {
+        p1: match.p1Action,
+        p2: match.p2Action
+    };
 
-    io.to(roomId).emit('turn_result', {
-        state: match.state,
-        events: result.events
-    });
+    try {
+        const result = match.kernel.submitActions(actions);
+        match.p1Action = null;
+        match.p2Action = null;
 
-    if (match.state.status === 'game_over') {
-        io.to(roomId).emit('game_over', { msg: `Game Over. Winner: ${match.state.winner}` });
-        matchService.removeMatch(roomId);
-    } else {
-        startTurnTimeout(io, roomId);
-    }
-}
+        io.to(roomId).emit('turn_result', {
+            state: result.state,
+            events: result.events
+        });
 
-function sanitizeAction(raw) {
-    const action = { type: 'idle' };
-    const validTypes = ['move', 'attack', 'defend', 'ability', 'idle'];
-    if (raw && validTypes.includes(raw.type)) {
-        action.type = raw.type;
-        if (['move', 'attack'].includes(action.type) || (action.type === 'ability' && raw.id === 'blink')) {
-            if (GameLogic.DIRECTIONS[raw.dir]) action.dir = raw.dir;
-            else action.type = 'idle';
+        if (result.state.status === 'game_over') {
+            io.to(roomId).emit('game_over', { msg: `Game Over. Winner: ${result.state.winner}` });
+            matchService.removeMatch(roomId);
+        } else {
+            startTurnTimeout(io, roomId);
         }
-        if (action.type === 'ability') {
-            if (GameLogic.ABILITIES[raw.id]) action.id = raw.id;
-            else action.type = 'idle';
-        }
+    } catch (err) {
+        console.error("Kernel Error:", err.message);
+        // Fallback or retry logic if needed
     }
-    return action;
 }

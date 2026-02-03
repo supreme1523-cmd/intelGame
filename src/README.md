@@ -5,7 +5,7 @@ This codebase follows a feature-oriented, modular structure designed for scalabi
 
 ## 📁 Directory Structure
 
-- **/core**: Fundamental game rules and state transitions. Framework-agnostic.
+- **/core-game**: The **Game Kernel**. A deterministic, framework-agnostic engine that manages rules, simultaneous turn resolution, and state snapshots.
 - **/matchmaking**: Manages player pairing, room codes, and the waiting queue.
 - **/feedback**: Handles persistent player feedback via PostgreSQL and administrative views.
 - **/transport**: The "glue" logic. Manages Socket.io events and Express routing.

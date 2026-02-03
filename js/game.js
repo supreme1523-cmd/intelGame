@@ -1,12 +1,14 @@
+
 (function () {
-    const { ABILITIES, createInitialState } = window.GameLogic;
     const UI = window.GameUI;
+    const { ABILITIES } = window.KernelConfigs;
 
     let socket = null;
     let myRole = null; // 'p1' or 'p2'
     let currentState = null;
     let pendingAction = null;
     let committed = false;
+    let kernel = null;
 
     // --- Menu Integration ---
     window.addEventListener('request_create_room', () => {
@@ -41,32 +43,15 @@
 
     // --- UI Callbacks ---
     function handleInput(type, data) {
-        if (committed || !currentState) return;
+        if (committed || !currentState || !kernel) return;
 
-        let cost = 0;
-        let newAction = pendingAction ? { ...pendingAction } : {};
-
-        if (type === 'ability') {
-            if (data.id) newAction.id = data.id;
-            if (data.dir) newAction.dir = data.dir;
-            newAction.type = 'ability';
-            if (newAction.id) cost = ABILITIES[newAction.id].cost;
-        } else {
-            newAction = { type, ...data };
-            cost = getActionCost(type);
-        }
-
-        // Penalty Approximation (Repeating actions cost +1)
-        const myState = currentState.players[myRole];
-        if (myState.lastAction && myState.lastAction.type === newAction.type && newAction.type !== 'ability') {
-            cost += 1;
-        }
-        if (myState.harvestPenalty) cost += myState.harvestPenalty;
+        let newAction = { type, ...data };
+        const cost = kernel.getActionCost(myRole, newAction);
 
         newAction.cost = cost;
         pendingAction = newAction;
 
-        UI.updatePreview(myRole, newAction, myState.nrg);
+        UI.updatePreview(myRole, newAction, currentState.players[myRole].nrg);
     }
 
     function handleCommit() {
@@ -106,6 +91,8 @@
         socket.on('match_start', (data) => {
             myRole = data.role;
             currentState = data.state;
+            kernel = new window.GameKernel(currentState);
+
             committed = false;
             pendingAction = null;
 
@@ -130,6 +117,10 @@
         socket.on('turn_result', (data) => {
             const finalState = data.state;
             const events = data.events || [];
+
+            // Sync Kernel state
+            kernel.state = finalState;
+
             committed = false;
             pendingAction = null;
 
@@ -146,14 +137,4 @@
             }, "RESTART");
         });
     }
-
-    // --- Helpers ---
-    function getActionCost(type) {
-        const { CONSTANTS } = window.GameLogic;
-        if (type === 'move') return CONSTANTS.COST.MOVE;
-        if (type === 'attack') return CONSTANTS.COST.ATTACK;
-        if (type === 'defend') return CONSTANTS.COST.DEFEND;
-        return 0;
-    }
-
 })();
