@@ -192,5 +192,9 @@
         roomError.classList.add('hidden');
     }
 
+    function clonedEvent(name, detail) {
+        return new CustomEvent(name, { detail });
+    }
+
     init();
 })();
