@@ -80,7 +80,7 @@
         }
 
         if (FLAGS.MATCHMAKING) {
-            addModeBtn('MATCHMAKING', () => console.log('Matchmaking...'));
+            addModeBtn('MATCHMAKING', handleStartMatchmaking);
         }
 
         if (FLAGS.AI_MODE) {
