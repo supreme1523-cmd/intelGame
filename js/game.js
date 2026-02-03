@@ -108,21 +108,21 @@
     function processLocalTurn(playerAction) {
         committed = true;
         UI.setLocked(true);
+        UI.showOverlay("OPPONENT THINKING", "Calculating optimum strategy...", () => { });
         UI.appendLog("Processing turn...");
 
-        // 1. Bot Decides
-        const botAction = botPlayer.decideMove(currentState, 'p2', aiDifficulty);
-
-        // 2. Resolve
-        const actions = { p1: playerAction, p2: botAction };
-        const result = kernel.submitActions(actions);
-        const finalState = result.state;
-        const events = result.events;
-
-        // 3. Animate (Reuse existing logic)
+        // 1. Bot Decides (with artificial delay for "feel")
         setTimeout(() => {
-            committed = false;
-            pendingAction = null;
+            const botAction = botPlayer.decideMove(currentState, 'p2', aiDifficulty);
+
+            // 2. Resolve
+            const actions = { p1: playerAction, p2: botAction };
+            const result = kernel.submitActions(actions);
+            const finalState = result.state;
+            const events = result.events;
+
+            // 3. Animate
+            UI.hideOverlay();
             UI.animateResolution(currentState, events, finalState, myRole, () => {
                 currentState = finalState;
                 UI.setLocked(false);
@@ -134,7 +134,7 @@
                     }, "RESTART");
                 }
             });
-        }, 500);
+        }, 1200); // 1.2s delay for realism
     }
 
     // --- Socket Listeners ---

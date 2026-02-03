@@ -22,10 +22,13 @@
     const roomError = document.getElementById('room-error');
     const displayRoomCode = document.getElementById('display-room-code');
     const cancelRoomBtn = document.getElementById('cancel-room-btn');
+    const fallbackArea = document.getElementById('lobby-fallback-area');
+    const fallbackBotBtn = document.getElementById('fallback-bot-btn');
     const backBtns = document.querySelectorAll('.back-btn');
 
     let currentScreen = 'landing';
     let isMatchmaking = false;
+    let fallbackTimer = null;
 
     function init() {
         playBtn.addEventListener('click', () => showScreen('options'));
@@ -39,6 +42,13 @@
         createRoomBtn.addEventListener('click', handleCreateRoom);
         joinRoomBtn.addEventListener('click', handleJoinRoom);
         cancelRoomBtn.addEventListener('click', handleCancelRoom);
+
+        if (fallbackBotBtn) {
+            fallbackBotBtn.addEventListener('click', () => {
+                handleCancelRoom(); // Stop socket matchmaking
+                window.dispatchEvent(clonedEvent('request_ai_match', { difficulty: 'Medium' }));
+            });
+        }
 
         backBtns.forEach(btn => {
             btn.addEventListener('click', handleBack);
@@ -124,6 +134,19 @@
         screens[name].classList.remove('hidden');
         currentScreen = name;
         hideError();
+
+        // Fallback Logic
+        if (name === 'lobby' && isMatchmaking) {
+            if (fallbackArea) fallbackArea.classList.add('hidden');
+            if (fallbackTimer) clearTimeout(fallbackTimer);
+            fallbackTimer = setTimeout(() => {
+                if (isMatchmaking && currentScreen === 'lobby' && fallbackArea) {
+                    fallbackArea.classList.remove('hidden');
+                }
+            }, 10000); // 10 seconds
+        } else {
+            if (fallbackTimer) clearTimeout(fallbackTimer);
+        }
     }
 
     function handleBack() {
