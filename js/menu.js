@@ -12,6 +12,9 @@
     };
 
     const playBtn = document.getElementById('play-btn');
+    const playRandomBtn = document.getElementById('play-random-btn');
+    const lobbyTitle = document.getElementById('lobby-title');
+    const roomCodeGroup = document.getElementById('room-code-group');
     const modeList = document.getElementById('mode-list');
     const createRoomBtn = document.getElementById('create-room-btn');
     const joinRoomBtn = document.getElementById('join-room-btn');
@@ -22,9 +25,13 @@
     const backBtns = document.querySelectorAll('.back-btn');
 
     let currentScreen = 'landing';
+    let isMatchmaking = false;
 
     function init() {
         playBtn.addEventListener('click', () => showScreen('options'));
+        if (playRandomBtn) {
+            playRandomBtn.addEventListener('click', handleStartMatchmaking);
+        }
 
         // Inject Modes based on Flags
         renderModes();
@@ -37,13 +44,25 @@
             btn.addEventListener('click', handleBack);
         });
 
+        // Listen for match matchmaking status (from server via game.js)
+        window.addEventListener('matchmaking_queued', () => {
+            isMatchmaking = true;
+            lobbyTitle.innerText = "MATCHMAKING";
+            if (roomCodeGroup) roomCodeGroup.classList.add('hidden');
+            showScreen('lobby');
+        });
+
         // Listen for match start to hide menu
         window.addEventListener('match_started', () => {
             menuSystem.classList.add('hidden');
+            isMatchmaking = false; // Reset
         });
 
         // Listen for room created (from server via game.js)
         window.addEventListener('room_created', (e) => {
+            isMatchmaking = false;
+            lobbyTitle.innerText = "ROOM LOBBY";
+            if (roomCodeGroup) roomCodeGroup.classList.remove('hidden');
             displayRoomCode.innerText = e.detail.code;
             showScreen('lobby');
         });
@@ -94,6 +113,10 @@
         window.dispatchEvent(new CustomEvent('request_create_room'));
     }
 
+    function handleStartMatchmaking() {
+        window.dispatchEvent(new CustomEvent('request_start_matchmaking'));
+    }
+
     function handleJoinRoom() {
         const code = roomInput.value.trim().toUpperCase();
         if (code.length !== 6) {
@@ -104,8 +127,14 @@
     }
 
     function handleCancelRoom() {
-        window.dispatchEvent(new CustomEvent('request_cancel_room'));
-        showScreen('room');
+        if (isMatchmaking) {
+            window.dispatchEvent(new CustomEvent('request_cancel_matchmaking'));
+            showScreen('landing');
+        } else {
+            window.dispatchEvent(new CustomEvent('request_cancel_room'));
+            showScreen('room');
+        }
+        isMatchmaking = false;
     }
 
     function showError(msg) {

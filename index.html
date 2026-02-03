@@ -16,8 +16,9 @@
         <div id="landing-screen" class="glass-panel menu-screen">
             <h1>SHARED INTENT <span class="highlight">ARENA</span></h1>
             <p class="tagline">Deterministic. Hidden. Strategic.</p>
-            <div class="primary-actions">
-                <button id="play-btn" class="glow-btn x-large">PLAY</button>
+            <div class="primary-actions vertical">
+                <button id="play-random-btn" class="glow-btn x-large">PLAY RANDOM</button>
+                <button id="play-btn" class="glow-btn x-large outline">PRIVATE MATCH</button>
                 <button id="landing-feedback-btn" class="glow-btn x-large outline">FEEDBACK</button>
             </div>
             <p class="footer-note">v0.6.0 | Playtest ready</p>
@@ -51,10 +52,12 @@
         </div>
 
         <div id="lobby-screen" class="glass-panel menu-screen hidden">
-            <h2>ROOM LOBBY</h2>
+            <h2 id="lobby-title">ROOM LOBBY</h2>
             <div class="lobby-info">
-                <p>Room Code:</p>
-                <div id="display-room-code" class="huge-text">------</div>
+                <div id="room-code-group">
+                    <p>Room Code:</p>
+                    <div id="display-room-code" class="huge-text">------</div>
+                </div>
                 <p class="waiting-animation">Waiting for opponent...</p>
             </div>
             <button id="cancel-room-btn" class="back-btn">CANCEL</button>

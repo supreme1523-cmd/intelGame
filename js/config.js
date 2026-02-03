@@ -3,7 +3,7 @@ const CONFIG = {
     // Feature Flags
     FLAGS: {
         FRIEND_PLAY: true,
-        MATCHMAKING: false,
+        MATCHMAKING: true,
         AI_MODE: false,
         RANKED: false
     },

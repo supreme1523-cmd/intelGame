@@ -358,8 +358,61 @@ function generateRoomCode() {
     return code;
 }
 
+// Matchmaking Queue
+const matchmakingQueue = [];
+
 io.on('connection', (socket) => {
     console.log('User connected:', socket.id);
+
+    socket.on('start_matchmaking', () => {
+        if (matchmakingQueue.includes(socket.id)) return;
+
+        console.log(`User ${socket.id} entered matchmaking.`);
+
+        if (matchmakingQueue.length > 0) {
+            const opponentId = matchmakingQueue.shift();
+            const code = `RAND-${generateRoomCode().slice(0, 4)}`;
+
+            matches[code] = {
+                state: null,
+                history: [],
+                p1: opponentId,
+                p2: socket.id,
+                p1Action: null,
+                p2Action: null,
+                timeout: null,
+                isPrivate: false
+            };
+
+            users[opponentId] = code;
+            users[socket.id] = code;
+
+            const p1Socket = io.sockets.sockets.get(opponentId);
+            const p2Socket = io.sockets.sockets.get(socket.id);
+
+            if (p1Socket) p1Socket.join(code);
+            if (p2Socket) p2Socket.join(code);
+
+            // Start Match
+            matches[code].state = GameLogic.createInitialState();
+            io.to(opponentId).emit('match_start', { role: 'p1', state: matches[code].state });
+            io.to(socket.id).emit('match_start', { role: 'p2', state: matches[code].state });
+
+            console.log(`Matchmaking Success: ${code} (${opponentId} vs ${socket.id})`);
+            startTurnTimeout(code);
+        } else {
+            matchmakingQueue.push(socket.id);
+            socket.emit('matchmaking_queued');
+        }
+    });
+
+    socket.on('cancel_matchmaking', () => {
+        const index = matchmakingQueue.indexOf(socket.id);
+        if (index !== -1) {
+            matchmakingQueue.splice(index, 1);
+            console.log(`User ${socket.id} left matchmaking.`);
+        }
+    });
 
     socket.on('create_room', () => {
         const code = generateRoomCode();
@@ -474,6 +527,14 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         console.log('User disconnected:', socket.id);
+
+        // Remove from matchmaking queue if present
+        const mmIndex = matchmakingQueue.indexOf(socket.id);
+        if (mmIndex !== -1) {
+            matchmakingQueue.splice(mmIndex, 1);
+            console.log(`User ${socket.id} removed from matchmaking queue due to disconnect.`);
+        }
+
         const roomId = users[socket.id];
         if (roomId) {
             const match = matches[roomId];

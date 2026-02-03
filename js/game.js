@@ -19,6 +19,15 @@
         socket.emit('join_room', { code: e.detail.code });
     });
 
+    window.addEventListener('request_start_matchmaking', () => {
+        ensureSocket();
+        socket.emit('start_matchmaking');
+    });
+
+    window.addEventListener('request_cancel_matchmaking', () => {
+        if (socket) socket.emit('cancel_matchmaking');
+    });
+
     window.addEventListener('request_cancel_room', () => {
         if (socket) socket.emit('cancel_room');
     });
@@ -88,6 +97,10 @@
 
         socket.on('join_failed', (data) => {
             window.dispatchEvent(new CustomEvent('join_failed', { detail: data }));
+        });
+
+        socket.on('matchmaking_queued', () => {
+            window.dispatchEvent(new CustomEvent('matchmaking_queued'));
         });
 
         socket.on('match_start', (data) => {
