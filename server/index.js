@@ -18,14 +18,40 @@ app.use(express.static(path.join(__dirname, '../')));
 
 // Database connection pool
 let pool = null;
+const dbConfig = {};
+
 if (process.env.DATABASE_URL) {
+    dbConfig.connectionString = process.env.DATABASE_URL;
+} else if (process.env.DB_HOST) {
+    dbConfig.user = process.env.DB_USER;
+    dbConfig.host = process.env.DB_HOST;
+    dbConfig.database = process.env.DB_NAME;
+    dbConfig.password = process.env.DB_PASS;
+    dbConfig.port = process.env.DB_PORT || 5432;
+}
+
+if (dbConfig.connectionString || dbConfig.host) {
     pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
+        ...dbConfig,
         ssl: { rejectUnauthorized: false } // Required for Render/Managed DBs
     });
-    console.log("Database connection initialized via DATABASE_URL.");
+    console.log(`Database pool initialized using ${dbConfig.connectionString ? 'DATABASE_URL' : 'individual components'}.`);
+
+    // Test connection immediately
+    pool.query('SELECT NOW()', (err, res) => {
+        if (err) {
+            console.error("CRITICAL: Database connection test failed!");
+            if (err.code === 'ENOTFOUND') {
+                console.error(`DNS Error: Could not resolve '${err.hostname}'. On Render, ensure your Web Service and Database are in the SAME REGION if using internal hostnames.`);
+            } else {
+                console.error(err);
+            }
+        } else {
+            console.log("Database connection test successful:", res.rows[0].now);
+        }
+    });
 } else {
-    console.warn("DATABASE_URL not found. Feedback system will be disabled.");
+    console.warn("No database credentials found (DATABASE_URL or DB_HOST). Feedback system is disabled.");
 }
 
 // Feedback Endpoint
