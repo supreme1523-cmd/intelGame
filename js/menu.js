@@ -11,7 +11,8 @@
         lobby: document.getElementById('lobby-screen')
     };
 
-    const playBtn = document.getElementById('play-btn');
+    const playFriendBtn = document.getElementById('play-friend-btn');
+    const playAiBtn = document.getElementById('play-ai-btn');
     const playRandomBtn = document.getElementById('play-random-btn');
     const lobbyTitle = document.getElementById('lobby-title');
     const roomCodeGroup = document.getElementById('room-code-group');
@@ -31,13 +32,20 @@
     let fallbackTimer = null;
 
     function init() {
-        playBtn.addEventListener('click', () => showScreen('options'));
+        if (playFriendBtn) {
+            playFriendBtn.addEventListener('click', () => showScreen('room'));
+        }
+        if (playAiBtn) {
+            playAiBtn.addEventListener('click', () => {
+                renderModes('ai'); // Trigger difficulty selection
+                showScreen('options');
+            });
+        }
         if (playRandomBtn) {
             playRandomBtn.addEventListener('click', handleStartMatchmaking);
         }
 
-        // Inject Modes based on Flags
-        renderModes();
+
 
         createRoomBtn.addEventListener('click', handleCreateRoom);
         joinRoomBtn.addEventListener('click', handleJoinRoom);
@@ -82,21 +90,7 @@
         });
     }
 
-    function renderModes() {
-        modeList.innerHTML = '';
-
-        if (FLAGS.FRIEND_PLAY) {
-            addModeBtn('PLAY WITH A FRIEND', () => showScreen('room'));
-        }
-
-        if (FLAGS.MATCHMAKING) {
-            addModeBtn('MATCHMAKING', handleStartMatchmaking);
-        }
-
-        if (FLAGS.AI_MODE) {
-            addModeBtn('TRAINING (AI)', () => showDifficultySelection());
-        }
-    }
+    // renderModes removed as it is now redundant.
 
     function addModeBtn(text, onClick) {
         const btn = document.createElement('button');
@@ -124,7 +118,7 @@
         back.innerText = '← BACK TO MODES';
         back.onclick = () => {
             title.innerText = originalTitle;
-            renderModes();
+            showScreen('landing');
         };
         modeList.appendChild(back);
     }
@@ -151,7 +145,7 @@
 
     function handleBack() {
         if (currentScreen === 'lobby') showScreen('room');
-        else if (currentScreen === 'room') showScreen('options');
+        else if (currentScreen === 'room') showScreen('landing');
         else if (currentScreen === 'options') showScreen('landing');
     }
 

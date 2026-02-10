@@ -168,17 +168,20 @@ body {
 
 .grid-container {
     display: grid;
-    grid-template-columns: repeat(16, 40px);
-    grid-template-rows: repeat(16, 40px);
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
     gap: 1px;
     background: rgba(255, 255, 255, 0.03);
-    padding: 5px;
+    padding: 1px;
     border: 1px solid var(--border);
+    width: 100%;
+    max-width: 640px;
+    aspect-ratio: 1;
 }
 
 .cell {
-    width: 40px;
-    height: 40px;
+    width: 100%;
+    height: 100%;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
@@ -456,17 +459,70 @@ body {
 }
 
 /* Mobile fallback */
+/* Mobile Re-Layout */
 @media (max-width: 1000px) {
     .main-layout {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr auto;
+        grid-template-rows: auto auto 1fr auto;
+        padding: 0;
+        gap: 0;
     }
 
     .side-panel {
         display: none;
+        /* TODO: Make togglable */
     }
 
-    /* Simplified for now */
+    .grid-viewport {
+        padding: 1rem;
+        align-items: flex-start;
+    }
+
+    .grid-container {
+        width: 95vmin;
+        max-width: 95vmin;
+    }
+
+    .unit {
+        width: 80%;
+        height: 80%;
+        box-shadow: 0 0 5px white;
+        /* Smaller glow */
+    }
+
+    .action-bar-overlay {
+        height: auto;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        border-top: 1px solid var(--border);
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .action-dock {
+        flex-wrap: wrap;
+        width: 100%;
+        justify-content: center;
+        padding: 10px;
+        gap: 10px;
+        border-radius: 12px;
+    }
+
+    .btn-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .action-btn {
+        flex-grow: 1;
+        font-size: 0.7rem;
+        padding: 0.5rem;
+    }
+
+    .intent-box {
+        display: none;
+        /* Hide intent box for space, use badges instead */
+    }
 }
 
 /* Menu System */
@@ -598,6 +654,41 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+
+    100% {
+        opacity: 0.6;
+    }
+}
+
+.status-indicator {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--accent);
+    padding: 2px 8px;
+    border: 1px solid var(--accent);
+    border-radius: 4px;
+    box-shadow: 0 0 5px var(--accent);
+    animation: pulse 2s infinite;
+}
+
+.badge {
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--accent);
+    padding: 1px 6px;
+    border-radius: 10px;
+    font-size: 0.7em;
+    margin-left: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @media (max-width: 600px) {

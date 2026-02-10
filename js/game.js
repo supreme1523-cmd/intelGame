@@ -169,6 +169,7 @@
 
             window.dispatchEvent(new CustomEvent('match_started'));
             UI.hideOverlay();
+            UI.setOpponentStatus(false);
             UI.setLocked(false);
             UI.init(handleInput, handleCommit);
             UI.render(currentState, myRole);
@@ -184,6 +185,7 @@
 
         socket.on('opponent_committed', () => {
             UI.appendLog("Opponent has locked intent.");
+            UI.setOpponentStatus(true);
         });
 
         socket.on('turn_result', (data) => {
@@ -199,6 +201,7 @@
             UI.animateResolution(currentState, events, finalState, myRole, () => {
                 currentState = finalState;
                 UI.hideOverlay();
+                UI.setOpponentStatus(false);
                 UI.setLocked(false);
                 UI.render(currentState, myRole);
             });

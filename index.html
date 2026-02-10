@@ -18,7 +18,8 @@
             <p class="tagline">Deterministic. Hidden. Strategic.</p>
             <div class="primary-actions vertical">
                 <button id="play-random-btn" class="glow-btn x-large">PLAY RANDOM</button>
-                <button id="play-btn" class="glow-btn x-large outline">PRIVATE MATCH</button>
+                <button id="play-friend-btn" class="glow-btn x-large outline">PLAY WITH FRIEND</button>
+                <button id="play-ai-btn" class="glow-btn x-large outline">TRAINING (AI)</button>
                 <button id="landing-feedback-btn" class="glow-btn x-large outline">FEEDBACK</button>
             </div>
             <p class="footer-note">v0.6.0 | Playtest ready</p>
@@ -122,7 +123,10 @@
             <!-- Right Panel: Opponent & Intent -->
             <aside class="side-panel right-panel">
                 <section id="opp-stats-container" class="panel-section stats-card glass-panel">
-                    <h2>OPPONENT</h2>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h2>OPPONENT</h2>
+                        <span id="opp-status" class="status-indicator hidden">READY</span>
+                    </div>
                     <div id="p2-hud" class="player-hud p2">
                         <div class="stat-row">
                             <span class="label">HP</span>
@@ -164,9 +168,12 @@
         <footer class="action-bar-overlay">
             <div id="action-panel" class="action-dock">
                 <div class="btn-group">
-                    <button id="action-move" class="action-btn" data-type="move">MOVE</button>
-                    <button id="action-attack" class="action-btn" data-type="attack">ATTACK</button>
-                    <button id="action-defend" class="action-btn" data-type="defend">DEFEND</button>
+                    <button id="action-move" class="action-btn" data-type="move">MOVE <span
+                            class="badge">1</span></button>
+                    <button id="action-attack" class="action-btn" data-type="attack">ATTACK <span
+                            class="badge">1</span></button>
+                    <button id="action-defend" class="action-btn" data-type="defend">DEFEND <span
+                            class="badge">1</span></button>
                 </div>
                 <div id="direction-pad" class="d-pad hidden">
                     <button id="dir-up" class="d-btn up" data-dir="up">▲</button>

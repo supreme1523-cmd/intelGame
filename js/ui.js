@@ -122,6 +122,10 @@
             const info = ABILITIES[id];
             btn.classList.add('action-btn', 'ability-btn');
             btn.innerText = `${info.name}`;
+            const badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.innerText = info.cost;
+            btn.appendChild(badge);
             btn.dataset.id = id;
 
             btn.addEventListener('click', () => {
@@ -306,9 +310,15 @@
 
     function hideOverlay() { overlayEl.classList.add('hidden'); }
 
+    function setOpponentStatus(isReady) {
+        const el = document.getElementById('opp-status');
+        if (isReady) el.classList.remove('hidden');
+        else el.classList.add('hidden');
+    }
+
     // Expose
     window.GameUI = {
         init, render, showOverlay, hideOverlay, updatePreview, appendLog,
-        hideOnboarding, setLocked, animateResolution
+        hideOnboarding, setLocked, animateResolution, setOpponentStatus
     };
 })();
