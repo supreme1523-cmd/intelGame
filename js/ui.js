@@ -24,6 +24,7 @@
     let onInputCallback = null;
     let onCommitCallback = null;
     let selectedActionType = null;
+    let selectedAbilityId = null;
     let currentPerspective = null;
     let initialized = false;
 
@@ -54,9 +55,15 @@
 
         dBtns.forEach(btn => {
             btn.addEventListener('click', () => {
-                if (!selectedActionType) return;
+                if (!selectedActionType || dPad.classList.contains('hidden')) return;
+
                 const dir = btn.dataset.dir;
-                onInputCallback(selectedActionType, { dir });
+                const data = { dir };
+                if (selectedActionType === 'ability' && selectedAbilityId) {
+                    data.id = selectedAbilityId;
+                }
+
+                onInputCallback(selectedActionType, data);
                 enableCommit();
             });
         });
@@ -76,6 +83,7 @@
 
     function clearSelection() {
         selectedActionType = null;
+        selectedAbilityId = null;
         actionBtns.forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.ability-btn').forEach(b => b.classList.remove('active'));
         dPad.classList.add('hidden');
@@ -123,6 +131,7 @@
 
                 onInputCallback('ability', { id: id });
                 selectedActionType = 'ability';
+                selectedAbilityId = id;
 
                 if (id === 'blink') {
                     dPad.classList.remove('hidden');

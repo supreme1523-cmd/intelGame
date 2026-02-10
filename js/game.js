@@ -121,7 +121,11 @@
             const finalState = result.state;
             const events = result.events;
 
-            // 3. Animate
+            // 3. Clear local turn state before animation starts
+            committed = false;
+            pendingAction = null;
+
+            // 4. Animate
             UI.hideOverlay();
             UI.animateResolution(currentState, events, finalState, myRole, () => {
                 currentState = finalState;
