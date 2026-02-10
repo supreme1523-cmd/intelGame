@@ -9,23 +9,13 @@ The game is designed with a high skill ceiling, focusing on prediction, resource
 
 ## 2. Core Game Rules
 
-### Map & Resources
-- **Grid**: 16x16 Symmetrical Strategic Arena.
-- **Resource Tiles**:
-  - **ENERGY (⚡)**: Restores +1 Energy. (Cooldown: 3 turns)
-  - **HEAL (🩹)**: Restores +1 HP. (Cooldown: 6 turns)
-  - **SPECIAL (🌟)**: Energy Refill + Next Action Free! (Cooldown: 10 turns)
-- **Contest**: If both players land on the same tile simultaneously, the resource is lost for that cycle (cooldown triggered, no benefit given).
+### 📖 Full Gameplay Rules
+For a complete breakdown of movement, combat, energy penalties, and bot difficulties, please refer to:
+👉 **[MECHANICS.md](./MECHANICS.md)**
 
-### Actions & Energy
-Every action has an energy cost. Players start with a base energy pool and regenerate energy each turn.
-- **MOVE (1 Energy)**: Move 1 tile in a cardinal direction.
-- **ATTACK (1 Energy)**: Attack an adjacent tile. Hits if the enemy is there at the end of the move phase.
-- **DEFEND (1 Energy)**: Gain a Shield. Negates incoming damage for the current turn.
-- **ABILITIES (Shared Pool)**:
-  - **BLINK (2 NRG)**: Teleport 2 tiles (ignores obstacles).
-  - **JAM (3 NRG)**: Cancel opponent's action.
-  - **RECHARGE (0 NRG)**: Restore +2 extra Energy.
+---
+
+
 
 ### Strategic Mechanics
 - **Repeated Action Penalty**: Using the same action type consecutively increases the cost by **+1 Energy**.

@@ -58,45 +58,16 @@ npm start
 ```
 Default port is 3000.
 
-## 🎮 How to Play
-**Objective**: Reduce opponent's Health to 0 OR checkmate them (remove all legal moves).
+## 🎮 Gameplay & Mechanics
+The game features a high-depth simultaneous resolution system. For a full breakdown of rules, energy costs, and strategic penalties, see:
 
-### Map: Strategic Arena
-- **Grid Size**: 16x16 Symmetrical.
-- **Resource Tiles**: Interactive zones that provide benefits.
-    - **ENERGY (⚡)**: +1 Energy.
-    - **HEAL (🩹)**: +1 HP.
-    - **SPECIAL (🌟)**: Energy Refill + Next Action Free!
-- **Rules**:
-    - **Contest**: If both players land on the same tile simultaneously, the resource is lost for that cycle.
-    - **Symmetry**: Resources are perfectly mirrored for absolute fairness.
-    - **Cooldowns**: Tiles deactivate for several turns after harvesting.
+👉 **[MECHANICS.md](./MECHANICS.md)**
 
-### Turn Structure
-The game is played in **Hotseat Mode** on a single device.
-1.  **Player 1 Planning**: Secretly choose your action. Click **COMMIT**.
-2.  **Pass Device**: Screen shows an overlay.
-3.  **Player 2 Planning**: Secretly choose your action. Click **COMMIT**.
-4.  **Resolution**: Watch the turn play out simultaneously.
-
-### Actions
-- **MOVE (1 Energy)**: Move 1 tile in a cardinal direction.
-- **ATTACK (1 Energy)**: Attack adjacent tile in a direction. Hits if enemy is there at the end of the move phase.
-- **DEFEND (1 Energy)**: Gain a Shield. Negates incoming damage.
-- **ABILITIES (Varies)**: Shared pool. Once picked, it's gone!
-    - **BLINK (2 NRG)**: Teleport 2 tiles (ignore obstacles).
-    - **JAM (3 NRG)**: Cancel opponent's action.
-    - **RECHARGE (0 NRG)**: Restore +2 EXTRA Energy.
-
-### Rules of Engagement
-- **Collision**: If both move to the same tile, they **BOUNCE** (stay put).
-- **Head-on**: If players swap tiles, they **BOUNCE**.
-- **Determinism**: No RNG. Resolution order is:
-    1.  Deduct Energy.
-    2.  Apply Defenses/Jam.
-    3.  Calculate Movement Intent.
-    4.  Resolve Collisions (Bounces).
-    5.  Resolves Attacks/Damage.
+### Quick Summary:
+- **Objective**: Reduce opponent's Health to 0.
+- **Simultaneous Turns**: Plan in secret, resolve together.
+- **Resource Management**: Collect Energy (⚡) and HP (🩹) on the grid.
+- **Mind Games**: Predict opponent movement to avoid collisions or land hits.
 
 ## 🛠 Extension & Modding
 - **`js/logic.js`**: Contains the "Truth". Edit `RESOLVE TURN` to add new interactions.
