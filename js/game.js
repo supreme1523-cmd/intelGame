@@ -168,6 +168,7 @@
             pendingAction = null;
 
             window.dispatchEvent(new CustomEvent('match_started'));
+            UI.hideOverlay();
             UI.setLocked(false);
             UI.init(handleInput, handleCommit);
             UI.render(currentState, myRole);
@@ -197,6 +198,7 @@
 
             UI.animateResolution(currentState, events, finalState, myRole, () => {
                 currentState = finalState;
+                UI.hideOverlay();
                 UI.setLocked(false);
                 UI.render(currentState, myRole);
             });
