@@ -223,7 +223,7 @@
                     p1: { id: 'p1', x: 2, y: 2, hp: CONSTANTS.MAX_HP, nrg: CONSTANTS.MAX_ENERGY, action: null, lastAction: null, shield: false, color: 'cyan', recentHarvests: [] },
                     p2: { id: 'p2', x: 13, y: 13, hp: CONSTANTS.MAX_HP, nrg: CONSTANTS.MAX_ENERGY, action: null, lastAction: null, shield: false, color: 'magenta', recentHarvests: [] }
                 },
-                tiles: {}, abilities: ['blink', 'jam', 'recharge'], log: []
+                tiles: {}, abilities: [], log: []
             };
             const seed = (x, y, type) => {
                 state.tiles[`${x},${y}`] = { type, cooldown: 0 };

@@ -34,7 +34,7 @@ function createInitialState() {
             }
         },
         tiles: {}, // "x,y" -> { type, cooldown }
-        abilities: ['blink', 'jam', 'recharge'],
+        abilities: [],
         log: []
     };
 
