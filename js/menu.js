@@ -37,7 +37,7 @@
         }
         if (playAiBtn) {
             playAiBtn.addEventListener('click', () => {
-                renderModes('ai'); // Trigger difficulty selection
+                showDifficultySelection(); // Trigger difficulty selection
                 showScreen('options');
             });
         }

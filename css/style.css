@@ -328,6 +328,11 @@ body {
     color: var(--bg-dark);
 }
 
+.mobile-commit {
+    display: none;
+    /* Desktop default: Hidden */
+}
+
 .d-pad {
     display: flex;
     flex-direction: column;
@@ -503,9 +508,33 @@ body {
         flex-wrap: wrap;
         width: 100%;
         justify-content: center;
+        width: 100%;
+        justify-content: center;
         padding: 10px;
         gap: 10px;
         border-radius: 12px;
+        position: relative;
+    }
+
+    .mobile-commit {
+        display: block !important;
+        padding: 0.8rem 1.5rem;
+        background: var(--accent);
+        color: black;
+        border: none;
+        border-radius: 8px;
+        font-weight: 800;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-top: 5px;
+        width: 100%;
+        text-align: center;
+        transition: opacity 0.3s;
+    }
+
+    .mobile-commit.disabled {
+        opacity: 0.5;
+        pointer-events: none;
     }
 
     .btn-group {

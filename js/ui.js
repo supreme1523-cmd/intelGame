@@ -9,6 +9,7 @@
     let nextBtn = document.getElementById('next-phase-btn');
     const logEl = document.getElementById('log-content');
     const commitBtn = document.getElementById('commit-btn');
+    const mobileCommitBtn = document.getElementById('commit-btn-mobile');
     const dPad = document.getElementById('direction-pad');
     const actionBtns = document.querySelectorAll('.action-btn');
     const abilityTrack = document.getElementById('ability-track');
@@ -75,6 +76,15 @@
             }
         });
 
+        if (mobileCommitBtn) {
+            mobileCommitBtn.addEventListener('click', () => {
+                if (!mobileCommitBtn.classList.contains('disabled')) {
+                    onCommitCallback();
+                    clearSelection();
+                }
+            });
+        }
+
         const fbBtn = document.getElementById('feedback-btn');
         if (fbBtn) fbBtn.addEventListener('click', () => alert("Thank you for playtesting! Report bugs to the arena master."));
 
@@ -93,8 +103,14 @@
         pendingCard.classList.add('empty');
     }
 
-    function enableCommit() { commitBtn.classList.remove('disabled'); }
-    function disableCommit() { commitBtn.classList.add('disabled'); }
+    function enableCommit() {
+        commitBtn.classList.remove('disabled');
+        if (mobileCommitBtn) mobileCommitBtn.classList.remove('disabled');
+    }
+    function disableCommit() {
+        commitBtn.classList.add('disabled');
+        if (mobileCommitBtn) mobileCommitBtn.classList.add('disabled');
+    }
     function hideOnboarding() { document.getElementById('onboarding-overlay').classList.add('hidden'); }
 
     function setLocked(isLocked) {
