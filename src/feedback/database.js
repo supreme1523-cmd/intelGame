@@ -1,26 +1,7 @@
 
-const { Pool } = require('pg');
-const config = require('../config/serverConfig');
+const pool = require('../db');
 
-let pool = null;
-const dbConfig = {};
-
-if (config.database.url) {
-    dbConfig.connectionString = config.database.url;
-} else if (config.database.host) {
-    dbConfig.user = config.database.user;
-    dbConfig.host = config.database.host;
-    dbConfig.database = config.database.name;
-    dbConfig.password = config.database.pass;
-    dbConfig.port = config.database.port;
-}
-
-if (dbConfig.connectionString || dbConfig.host) {
-    pool = new Pool({
-        ...dbConfig,
-        ssl: { rejectUnauthorized: false }
-    });
-
+if (pool) {
     // Initialize schema
     const initSql = `
         CREATE TABLE IF NOT EXISTS feedback_forms (
