@@ -165,4 +165,33 @@ router.get('/admin/feedback', async (req, res) => {
     }
 });
 
+// GET /api/db-debug - Diagnostic route
+router.get('/api/db-debug', async (req, res) => {
+    const key = req.query.key;
+    if (key !== config.admin.viewKey) return res.status(403).send('Forbidden');
+
+    const status = {
+        poolExists: !!pool,
+        configUrlExists: !!config.database.url,
+        lastError: null,
+        now: null
+    };
+
+    try {
+        const result = await pool.query('SELECT NOW()');
+        status.now = result.rows[0].now;
+    } catch (err) {
+        status.lastError = err.message;
+    }
+
+    try {
+        const tableCheck = await pool.query("SELECT 1 FROM information_schema.tables WHERE table_name = 'feedback_forms'");
+        status.tableExists = tableCheck.rowCount > 0;
+    } catch (err) {
+        status.tableError = err.message;
+    }
+
+    res.json(status);
+});
+
 module.exports = router;
