@@ -496,29 +496,29 @@ body {
     }
 
     .action-bar-overlay {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
         height: auto;
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        border-top: 1px solid var(--border);
+        padding: 15px;
+        background: rgba(0, 0, 0, 0.95);
+        backdrop-filter: blur(10px);
+        border-top: 2px solid var(--accent);
         flex-direction: column;
         gap: 10px;
+        display: flex;
     }
 
-    .action-dock {
-        flex-wrap: wrap;
-        width: 100%;
-        justify-content: center;
-        width: 100%;
-        justify-content: center;
-        padding: 10px;
-        gap: 10px;
-        border-radius: 12px;
-        position: relative;
+    .main-layout {
+        padding-bottom: 250px;
+        /* Space for fixed footer */
     }
 
     .mobile-commit {
         display: block !important;
-        padding: 0.8rem 1.5rem;
+        padding: 1rem;
         background: var(--accent);
         color: black;
         border: none;
@@ -526,14 +526,16 @@ body {
         font-weight: 800;
         cursor: pointer;
         flex-shrink: 0;
-        margin-top: 5px;
         width: 100%;
         text-align: center;
-        transition: opacity 0.3s;
+        transition: all 0.2s;
+        font-size: 1.1rem;
+        box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
     }
 
     .mobile-commit.disabled {
-        opacity: 0.5;
+        opacity: 0.3;
+        filter: grayscale(1);
         pointer-events: none;
     }
 
