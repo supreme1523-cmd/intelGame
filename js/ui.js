@@ -131,6 +131,12 @@
         const myLabel = document.getElementById('my-role-label');
         if (myLabel) myLabel.innerText = `YOU (${perspective.toUpperCase()})`;
 
+        // Update Mobile Tags
+        const p1Tag = document.querySelector('.mobile-player-strip.p1 .player-tag');
+        const p2Tag = document.querySelector('.mobile-player-strip.p2 .player-tag');
+        if (p1Tag) p1Tag.innerText = `P1 (BLUE)${perspective === 'p1' ? ' (YOU)' : ''}`;
+        if (p2Tag) p2Tag.innerText = `${perspective === 'p2' ? '(YOU) ' : ''}P2 (RED)`;
+
         // Ability Track
         abilityTrack.innerHTML = '';
         state.abilities.forEach(id => {
@@ -291,6 +297,15 @@
         nrgBar.style.width = `${(pState.nrg / CONSTANTS.MAX_ENERGY) * 100}%`;
         hpVal.innerText = `${pState.hp}/${CONSTANTS.MAX_HP}`;
         nrgVal.innerText = `${pState.nrg}/${CONSTANTS.MAX_ENERGY}`;
+
+        // Update Mobile HUD
+        const mHpBar = document.getElementById(`mobile-${id}-hp`);
+        const mNrgBar = document.getElementById(`mobile-${id}-nrg`);
+        const mVals = document.getElementById(`mobile-${id}-vals`);
+
+        if (mHpBar) mHpBar.style.width = `${(pState.hp / CONSTANTS.MAX_HP) * 100}%`;
+        if (mNrgBar) mNrgBar.style.width = `${(pState.nrg / CONSTANTS.MAX_ENERGY) * 100}%`;
+        if (mVals) mVals.innerText = `${pState.hp}/${pState.nrg}`;
     }
 
     function updatePreview(player, action, currentEnergy) {
