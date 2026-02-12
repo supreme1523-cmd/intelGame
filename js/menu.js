@@ -73,6 +73,8 @@
         // Listen for match start to hide menu
         window.addEventListener('match_started', () => {
             menuSystem.classList.add('hidden');
+            const app = document.getElementById('app');
+            if (app) app.classList.remove('hidden');
             isMatchmaking = false; // Reset
         });
 
