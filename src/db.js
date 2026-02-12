@@ -1,5 +1,6 @@
 
 const { Pool } = require('pg');
+const dns = require('dns');
 const config = require('./config/serverConfig');
 
 /**
@@ -15,7 +16,10 @@ const pool = new Pool({
         rejectUnauthorized: false
     },
     keepAlive: true, // Help maintain connection through proxies
-    family: 4 // Force IPv4 to resolve ENETUNREACH issues on Render
+    // Force IPv4 resolution to prevent ENETUNREACH on Render's IPv6-limited environment
+    lookup: (hostname, options, callback) => {
+        return dns.lookup(hostname, { family: 4 }, callback);
+    }
 });
 
 pool.on('error', (err) => {
