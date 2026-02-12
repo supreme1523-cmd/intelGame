@@ -8,17 +8,17 @@ const config = require('./config/serverConfig');
  */
 const pool = new Pool({
     connectionString: config.database.url,
-    max: 10, // Maximum number of clients in the pool
-    idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-    connectionTimeoutMillis: 5000, // How long to wait when connecting to a new client
+    max: 10,
+    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000, // Increased to 10s for slower cold starts
     ssl: {
-        rejectUnauthorized: false // Required for Supabase / Cloud Postgres
-    }
+        rejectUnauthorized: false
+    },
+    keepAlive: true // Help maintain connection through proxies
 });
 
 pool.on('error', (err) => {
     console.error('Unexpected error on idle client', err);
-    process.exit(-1);
 });
 
 module.exports = pool;

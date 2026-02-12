@@ -94,6 +94,7 @@ router.post('/feedback', async (req, res) => {
         await pool.query('INSERT INTO feedback_forms (data) VALUES ($1)', [JSON.stringify(feedbackData)]);
         res.status(200).json({ message: 'Feedback submitted! Thank you.' });
     } catch (err) {
+        console.error("Feedback Submission DB Error:", err);
         res.status(500).json({ error: 'Database error' });
     }
 });
@@ -159,6 +160,7 @@ router.get('/admin/feedback', async (req, res) => {
         html += '</tbody></table></body></html>';
         res.send(html);
     } catch (err) {
+        console.error("Admin Feedback DB Error:", err);
         res.status(500).send('DB Error');
     }
 });
