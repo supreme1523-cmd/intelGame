@@ -537,6 +537,17 @@ body {
         box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
     }
 
+    .mini-btn {
+        position: static;
+        width: 100%;
+        margin-top: 5px;
+        text-align: center;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border);
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
     .mobile-commit.disabled {
         opacity: 0.3;
         filter: grayscale(1);
