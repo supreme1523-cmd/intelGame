@@ -10,7 +10,7 @@ const pool = new Pool({
     connectionString: config.database.url,
     max: 10, // Maximum number of clients in the pool
     idleTimeoutMillis: 30000, // How long a client is allowed to remain idle before being closed
-    connectionTimeoutMillis: 2000, // How long to wait when connecting to a new client
+    connectionTimeoutMillis: 5000, // How long to wait when connecting to a new client
     ssl: {
         rejectUnauthorized: false // Required for Supabase / Cloud Postgres
     }
