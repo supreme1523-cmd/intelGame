@@ -180,7 +180,8 @@ router.get('/api/db-debug', async (req, res) => {
         lastError: null,
         now: null,
         env: process.env.NODE_ENV,
-        adminKeyConfigured: config.admin.viewKey !== 'test_key'
+        adminKeyConfigured: config.admin.viewKey !== 'test_key',
+        family: 4
     };
 
     try {

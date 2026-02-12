@@ -14,7 +14,8 @@ const pool = new Pool({
     ssl: {
         rejectUnauthorized: false
     },
-    keepAlive: true // Help maintain connection through proxies
+    keepAlive: true, // Help maintain connection through proxies
+    family: 4 // Force IPv4 to resolve ENETUNREACH issues on Render
 });
 
 pool.on('error', (err) => {
